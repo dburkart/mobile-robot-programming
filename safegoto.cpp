@@ -153,17 +153,17 @@ int main( int argc, char *argv[] ) {
 		theta = pos.theta( dest );
 
 		std::cout << "Got data " << rp.GetRangeCount() << std::endl;
-
+		
 		std::cout << "Pos: (" << pos.x << "," << pos.y << "), Yaw: " << pp.GetYaw() << std::endl; 
 		std::cout << "Distance from (" << dest.x << ", " << dest.y << "): " << pos - dest << ", theta: " << theta << std::endl;
 		
 		dtheta = theta - yaw;
 		
 		if (fabs(dtheta) < .001) turning = false;
+		if (!turning) dtheta = 0.0;
 		
 		accel = 1.0*(pos - dest) + 1.0*(0.0 - pp.GetXSpeed());
 		
-		std::cout << "accel: " << accel << std::endl;
 		
 		// dtheta == dtheta looks wrong, but it's not! We need to guard against
 		// dtheta being NaN.
@@ -173,8 +173,8 @@ int main( int argc, char *argv[] ) {
 		
 		// If we haven't started moving yet, OR we have and are still far enough
 		// away, and we haven't overshot.
-		else if ( !pp.GetXSpeed() || (pos - dest > .02 && accel <= 0.0) ) {
-			pp.SetSpeed( pp.GetXSpeed() + accel, 0.0 );
+		else if ( !pp.GetXSpeed() || pp.GetXSpeed() == 1 || (pos - dest > .02 && accel <= 0.0) ) {
+			pp.SetSpeed( (1 < pp.GetXSpeed() + accel) ? 1 : pp.GetXSpeed() + accel, dtheta );
 		} 
 		
 		// We've gotten to the point, so stop the robot, get the next point, and
