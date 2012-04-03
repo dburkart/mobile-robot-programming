@@ -1,20 +1,28 @@
-/*
+/**
  * file: safegoto.cpp
  * 
- * Description: Read in a set of points, and try go to each one while avoiding
- *		obstacles.
+ * Description: Read in a set of points, and try go to each one while 
+ * 		avoiding obstacles. Because of the restrictions on submitting
+ * 		multiple source files, this file is choc-full of data structures.
  * 
  * Author: Dana Burkart (dsb3573)
  */
 
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <libplayerc++/playerc++.h>
 #include <iomanip>
 #include <math.h>
 
+#include "safegoto.h"
+
 using namespace PlayerCc;
 
+/**
+ * The point structure is used to hold an (x, y) tuple, and provides a
+ * few useful operations.
+ */
 struct Point {
 	double x, y;
 	
@@ -24,6 +32,10 @@ struct Point {
 	//
 	double operator-( const Point& p ) const {
 		return sqrt((x - p.x)*(x - p.x) + (y - p.y)*(y - p.y));
+	}
+	
+	Point operator+( const Point& p ) const {
+		return (Point){ x + p.x, y + p.y };
 	}
 	
 	//
@@ -88,107 +100,250 @@ struct Point {
 	}
 };
 
-typedef struct Point Point;
-typedef std::vector< Point > Path;
+/**
+ * The Vector struct is a tuple (direction, magnitude) that provides some
+ * useful functions on vectors.
+ */
+struct Vector {
+	double direction;
+	double magnitude;
+	
+	//
+	// Return the components of this vector in the form of a point.
+	//
+	Point components() const {
+		return (Point){ magnitude * cos(direction), magnitude * sin(direction) };
+	}
+	
+	//
+	// Vector addition
+	//
+	Vector operator+( const Vector& v ) const {
+		Point cx = components() + v.components();
+		Vector vn;
+		
+		vn.direction = atan(cx.y / cx.x);
+		vn.magnitude = pow(cx.y*sin(vn.direction), -1);
+		
+		return vn;
+	}
+	
+	void print() {
+		std::cout << "(m: " << magnitude << ", d: " << rtod( direction )
+			<< ")" << std::endl;
+	}
+};
+
+/**
+ * The robot class abstracts over a robot, providing an interface for
+ * adding processing hooks.
+ */
+class Robot {
+public:
+
+	Robot( PlayerClient *c, Path p ) :
+		client( c ),
+		pp( c, 0 ),
+		rp( c, 0 ),
+		path( p )
+	{
+		position = (Point){ 0.0, 0.0 };
+		velocity = (Vector){ 0.0, 0.0 };
+		currentGoal = path.begin();
+		rdata.resize(102);
+	}
+	
+	~Robot() {}
+	
+	//
+	// Add a processing hook to this robot. The order hooks are called
+	// is fifo, so add lowest processing layers first.R
+	//
+	void AddHook( RobotHook h ) {
+		hooks.push_back( h );
+	}
+	
+	//
+	// Enter the run loop
+	//
+	int Run() {
+		while (!rp.IsValid()) client->Read();
+		
+		for(;;) {
+			RobotHookList::iterator it;
+			
+			UpdateRangeData();
+			
+			Point p = position 	= (Point){ pp.GetXPos(), pp.GetYPos() };
+			Vector v = velocity = (Vector){ pp.GetYaw(), pp.GetXSpeed() };
+			
+			for (it = hooks.begin(); it < hooks.end(); it++ ) {
+				RobotHook h = *it;
+				h( this, &p, &v );
+			}
+			
+			pp.SetSpeed( v.magnitude, v.direction );
+			
+			if ( currentGoal == path.end() ) break;
+			
+			client->Read();
+		}
+	}
+	
+	Point GetGoal() {
+		return *currentGoal;
+	}
+	
+	void GoalAchieved() {
+		currentGoal++;
+	}
+	
+	void UpdateRangeData() {
+		for ( int i = 0; i < 102; i++ ) {
+			Vector vAvg = (Vector){0.0, 0.0};
+			
+			for ( int j = 0; j < 5; j++ ) {
+				Vector vTemp = (Vector){ (3.14159 * (i * j)) / (510), 
+										 rp[ 30 + (i * j) ] };
+										 
+				if ( j == 0 ) vAvg = vTemp;
+				else vAvg = vAvg + vTemp;
+			}
+			
+			vAvg.magnitude  /= 5.0;
+			rdata[i] = vAvg;
+		}
+	}
+	
+	RangeData *GetRangeData() {
+		return &rdata;
+	}
+	
+	Vector GetVelocity() {
+		return velocity;
+	}
+
+protected:
+	
+	Point 		position;
+	Vector		velocity;
+	Path		path;
+	RangeData	rdata;
+	
+private:
+	
+	PlayerClient	*client;
+	Position2dProxy	pp;
+	RangerProxy		rp;
+	
+	RobotHookList 	hooks;
+	Path::iterator	currentGoal;
+	
+};
+
+bool turning = true;
+
+int goToPoint(Robot *robot, Point *at, Vector *velocity) {
+	Point dest = robot->GetGoal();
+	Point dtrans;
+	double accel = 0.0;
+	double theta = 0.0, dtheta = 0.0;
+	
+	// Calculate our relative coordinate
+	dtrans  = (Point){ dest.x - at->x, dest.y - at->y };
+	
+	// Calculate the theta we should be
+	theta = at->theta( dest );
+	
+	// Calculate our delta theta
+	dtheta = theta - velocity->direction;
+	
+	// Calculate our acceleration
+	accel = 1.0*((*at) - dest) + 1.0*(0.0 - velocity->magnitude);
+	
+	if ( turning && fabs(dtheta) > .02 ) {
+		velocity->direction = dtheta;
+		velocity->magnitude = 0.0;
+	}
+	
+	// If we haven't started moving yet, OR we have and are still far enough
+	// away, and we haven't overshot.
+	else if ( !velocity->magnitude || velocity->magnitude == 1 || ((*at) - dest > .02 && accel <= 0.0) ) {
+		velocity->direction = 0.0;
+		velocity->magnitude = (1 < velocity->magnitude + accel) ? 
+			1 : velocity->magnitude + accel;
+		turning = false;
+	} 
+	
+	// We've gotten to the point, so stop the robot, get the next point, and
+	// reset 'turning'
+	else {
+		velocity->direction = 0.0;
+		velocity->magnitude = 0.0;
+		robot->GoalAchieved();
+		turning = true;
+	}
+}
+
+int obstacleAvoidance(Robot *robot, Point *at, Vector *velocity) {
+	RangeData *rdata = robot->GetRangeData();
+	RangeData::iterator it;
+	Vector rForce = (Vector){ 0.0, 0.0 };
+	Vector currentVelocity = robot->GetVelocity();
+	
+	// Calculate a repelling force (rForce) to push our robot away
+	// from obstacles.
+	for ( it = rdata->begin(); it < rdata->end(); it++ ) {
+		// Throw out data we don't care about
+		if ( it->magnitude == it->magnitude && it->magnitude > 0 ) {
+			it->magnitude = 1.0 / (it->magnitude * 2);
+			it->direction *= -1.0;
+			
+			if (rForce.magnitude == 0.0) rForce = *it;
+			else rForce = rForce + (*it);
+		}
+	}
+	
+	if ( velocity->magnitude > 0 ) {
+		velocity->direction = (currentVelocity + rForce).direction - currentVelocity.direction;
+	}
+}
 
 int main( int argc, char *argv[] ) {
 	Path path;
-	double dtheta = 0.0;
-	bool turning = true;
-	
+	std::ifstream input;
 	char host[] = "localhost:6665";
 	
-	int current = 0;
-	
-	std::ifstream input;
 	input.open( argv[2], std::ifstream::in );
-	
 	while (!input.eof()) {
 		char buff[12];
 		Point p;
 		
-		input.getline(buff, 12);
+		input.getline( buff, 12 );
 		
-		if ( input.eof() ) break;
+		if (input.eof()) break;
 		
 		p.x = atof( strtok( buff, " " ) );
 		p.y = atof( strtok( NULL, " " ) );
 		
-		std::cout << "Adding point: (" << p.x << ", " << p.y << ")" << std::endl;
-		
 		path.push_back( p );
 	}
 	
-	PlayerClient *robot;
+	PlayerClient *client;
 	
 	// TODO: Fix this!
 	if ( argc == 4 ) {
-		robot = new PlayerClient( argv[3] );
+		client = new PlayerClient( argv[3] );
 	} else {
-		robot = new PlayerClient( "localhost", 6665 );
+		client = new PlayerClient( "localhost", 6665 );
 	}
 	
-	RangerProxy		rp( robot, 0 );
-	Position2dProxy	pp( robot, 0 );
+	Robot robot( client, path );
 	
-	while (!rp.IsValid())
-		robot->Read();
+	robot.AddHook( &goToPoint );
+	robot.AddHook( &obstacleAvoidance );
 	
-	for(;;)
-	{
-		Point dest = path[current];
-		Point dtrans;
-		Point pos;
-		double accel = 0.0;
-		double yaw;
-		double theta = 0.0;
-		
-		// read from the proxies
-		robot->Read();
-		
-		pos 	= (Point){ pp.GetXPos(), pp.GetYPos() };
-		yaw 	= pp.GetYaw();
-		dtrans  = (Point){ dest.x - pos.x, dest.y - pos.y };
-		
-		theta = pos.theta( dest );
-
-		std::cout << "Got data " << rp.GetRangeCount() << std::endl;
-		
-		std::cout << "Pos: (" << pos.x << "," << pos.y << "), Yaw: " << pp.GetYaw() << std::endl; 
-		std::cout << "Distance from (" << dest.x << ", " << dest.y << "): " << pos - dest << ", theta: " << theta << std::endl;
-		
-		dtheta = theta - yaw;
-		
-		if (fabs(dtheta) < .001) turning = false;
-		if (!turning) dtheta = 0.0;
-		
-		accel = 1.0*(pos - dest) + 1.0*(0.0 - pp.GetXSpeed());
-		
-		
-		// dtheta == dtheta looks wrong, but it's not! We need to guard against
-		// dtheta being NaN.
-		if ( dtheta == dtheta && turning ) {
-			pp.SetSpeed( 0.0, dtheta );
-		} 
-		
-		// If we haven't started moving yet, OR we have and are still far enough
-		// away, and we haven't overshot.
-		else if ( !pp.GetXSpeed() || pp.GetXSpeed() == 1 || (pos - dest > .02 && accel <= 0.0) ) {
-			pp.SetSpeed( (1 < pp.GetXSpeed() + accel) ? 1 : pp.GetXSpeed() + accel, dtheta );
-		} 
-		
-		// We've gotten to the point, so stop the robot, get the next point, and
-		// reset 'turning'
-		else {
-			pp.SetSpeed( 0.0, 0.0 );
-			current += 1;
-			turning = true;
-		}
-		
-		std::cout << "dtheta: " << dtheta << std::endl;
-		
-		if ( current == path.size() ) break;
-	}
+	robot.Run();
 	
-    return 0;
+	return 0;
 }
