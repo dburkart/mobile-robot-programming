@@ -373,6 +373,7 @@ int obstacleAvoidance(Robot *robot, Point *at, Vector *velocity) {
 	// Calculate a repelling force (rForce) to push our robot away
 	// from obstacles.
 	for ( it = rdata->begin(); it < rdata->end(); it++ ) {
+		// TODO: Throw out data based on laser/sonar
 		// Throw out data we don't care about (35 degrees for laser)
 		if ( it->magnitude == it->magnitude && it->magnitude > 0.0 && 
 			 it->magnitude < 1.0 && it->direction > dtor(45) &&
