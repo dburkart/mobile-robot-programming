@@ -17,6 +17,10 @@
 
 #include "safegoto.h"
 
+#define MAX_TURNRATE 	1.5
+#define MIN_TURNRATE	0.1
+#define MAX_XSPEED		0.4
+
 using namespace PlayerCc;
 
 /**
@@ -177,6 +181,9 @@ public:
 		}
 		
 		ranger = laser;
+		
+		pp.SetMotorEnable(true);
+		pp.ResetOdometry();
 	}
 	
 	~Robot() {}
@@ -197,11 +204,11 @@ public:
 		
 		for(;;) {
 			RobotHookList::iterator it;
-			
 			UpdateRangeData();
 			
+			std::cout << "Position: (" << pp.GetXPos() << ", " << pp.GetYPos() << ")\n" << std::endl;
 			Point p = position 	= (Point){ pp.GetXPos(), pp.GetYPos() };
-			Vector v = velocity = (Vector){ pp.GetYaw(), pp.GetXSpeed() };
+			Vector v = velocity = (Vector){ pp.GetYaw(), velocity.magnitude };
 			
 			for (it = hooks.begin(); it < hooks.end(); it++ ) {
 				RobotHook h = *it;
@@ -209,6 +216,9 @@ public:
 			}
 			
 			pp.SetSpeed( v.magnitude, v.direction );
+			
+			// Save our magnitude (no GPS!)
+			velocity.magnitude = v.magnitude;
 			
 			if ( currentGoal == path.end() ) break;
 			
@@ -275,6 +285,10 @@ public:
 			return 8;
 		}
 	}
+	
+	bool Ranger() {
+		return ranger;
+	}
 
 protected:
 	
@@ -309,7 +323,7 @@ int goToPoint(Robot *robot, Point *at, Vector *velocity) {
 	double theta = 0.0, dtheta = 0.0;
 	
 	// Calculate our relative coordinate
-	dtrans  = (Point){ dest.x - at->x, dest.y - at->y };
+	//dtrans  = (Point){ dest.x - at->x, dest.y - at->y };
 	
 	// Calculate the theta we should be
 	theta = at->theta( dest );
@@ -320,19 +334,23 @@ int goToPoint(Robot *robot, Point *at, Vector *velocity) {
 	// Calculate our acceleration
 	accel = k_1*((*at) - dest) + k_2*(0.0 - velocity->magnitude);
 	
-	if (fabs(dtheta) <= .02) turning = false; 
+	if (fabs(dtheta) <= MIN_TURNRATE) turning = false; 
 	
-	if ( adjusting && fabs(dtheta) > .02 ) {
+	std::cout << "distance: " << (*at) - dest << std::endl;
+	std::cout << "magnitude: " << velocity->magnitude << std::endl;
+	std::cout << "acceleration: " << accel << std::endl;
+	
+	if ( adjusting && fabs(dtheta) > MIN_TURNRATE ) {
 		velocity->direction = theta;
 		velocity->magnitude = 0.0;
 	}
 	
 	// If we haven't started moving yet, OR we have and are still far enough
 	// away, and we haven't overshot.
-	else if ( !velocity->magnitude || velocity->magnitude == 1 || ((*at) - dest > .02 && accel <= 0.0) ) {
+	else if ( !velocity->magnitude || velocity->magnitude == MAX_XSPEED || ((*at) - dest > .05 && accel <= 0.0) ) {
 		velocity->direction = (turning) ? theta : robot->GetVelocity()->direction;
-		velocity->magnitude = ( 1 < velocity->magnitude + accel) ? 
-			1 : velocity->magnitude + accel;
+		velocity->magnitude = ( MAX_XSPEED < velocity->magnitude + accel) ? 
+			MAX_XSPEED : velocity->magnitude + accel;
 		adjusting = false;
 	} 
 	
@@ -355,12 +373,11 @@ int obstacleAvoidance(Robot *robot, Point *at, Vector *velocity) {
 	// Calculate a repelling force (rForce) to push our robot away
 	// from obstacles.
 	for ( it = rdata->begin(); it < rdata->end(); it++ ) {
-		it->print();
-		// Throw out data we don't care about
+		// Throw out data we don't care about (35 degrees for laser)
 		if ( it->magnitude == it->magnitude && it->magnitude > 0.0 && 
 			 it->magnitude < 1.0 && it->direction > dtor(45) &&
 			 it->direction < dtor(135) ) {
-			
+			it->print();
 			if (rForce.magnitude == 0.0) rForce = *it;
 			else rForce = rForce + (*it);
 		}
@@ -377,10 +394,10 @@ int obstacleAvoidance(Robot *robot, Point *at, Vector *velocity) {
 	std::cout << "force: ";
 	force.print();
 	
-	if ( fabs(force.direction - robot->GetVelocity()->direction) > .02 && 
+	if ( fabs(force.direction - robot->GetVelocity()->direction) > MIN_TURNRATE && 
 		 velocity->magnitude > 0.0 && rForce.magnitude > 0.0) {
-		velocity->direction = force.direction;
 		
+		velocity->direction = force.direction;
 		
 		turning = true;
 	}
@@ -395,8 +412,13 @@ int convertToTurnrate(Robot *robot, Point *at, Vector *velocity) {
 	// Calculate our delta theta
 	dtheta = velocity->direction - robot->GetVelocity()->direction;
 	
+	// Make sure dtheta is actually efficient
+	dtheta = ( fabs( dtheta ) > dtor( 180 ) ) ? 
+		((dtheta > 0.0) ? (dtor( 360 ) - dtheta)*-1.0 : dtor( 360 ) + dtheta) : 
+		dtheta;
+	
 	// Set our velocity's direction to a turnrate
-	velocity->direction = dtheta;
+	velocity->direction = (fabs(dtheta) > MAX_TURNRATE) ? ((dtheta > 0.0) ? MAX_TURNRATE : -MAX_TURNRATE) : dtheta;
 	
 	velocity->print();
 }
@@ -404,7 +426,6 @@ int convertToTurnrate(Robot *robot, Point *at, Vector *velocity) {
 int main( int argc, char *argv[] ) {
 	Path path;
 	std::ifstream input;
-	char host[] = "localhost:6665";
 	
 	input.open( argv[2], std::ifstream::in );
 	while (!input.eof()) {
@@ -423,10 +444,15 @@ int main( int argc, char *argv[] ) {
 	
 	PlayerClient *client;
 	
-	// TODO: Fix this!
 	if ( argc == 4 ) {
-		client = new PlayerClient( argv[3] );
+		char *host;
+		int port;
+		host = strtok( argv[3], ":" );
+		port = atoi( strtok( NULL, ":" ) );
+		client = new PlayerClient( host, port );
+		
 	} else {
+		//client = new PlayerClient( "129.21.133.159", 6665 );
 		client = new PlayerClient( "localhost", 6665 );
 	}
 	
