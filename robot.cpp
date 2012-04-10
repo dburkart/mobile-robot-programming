@@ -29,7 +29,7 @@ Robot::Robot( PlayerClient *c, Path p, bool laser ) :
 // Add a processing hook to this robot. The order hooks are called
 // is fifo, so add lowest processing layers first.
 //
-void Robot::AddHook( Behavior h ) {
+void Robot::AddBehavior( Behavior h ) {
     hooks.push_back( h );
 }
 

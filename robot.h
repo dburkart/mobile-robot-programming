@@ -20,10 +20,10 @@ public:
 	~Robot() {}
 	
 	//
-	// Add a processing hook to this robot. The order hooks are called
+	// Add a processing behavior to this robot. The order hooks are called
 	// is fifo, so add lowest processing layers first.
 	//
-	void AddHook( Behavior h );
+	void AddBehavior( Behavior h );
 	
 	//
 	// Enter the run loop

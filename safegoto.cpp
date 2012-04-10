@@ -174,9 +174,9 @@ int main( int argc, char *argv[] ) {
 	
 	Robot robot( client, path, (strcmp( argv[1], "laser" ) == 0) );
 	
-	robot.AddHook( &goToPoint );
-	robot.AddHook( &obstacleAvoidance );
-	robot.AddHook( &convertToTurnrate );
+	robot.AddBehavior( &goToPoint );
+	robot.AddBehavior( &obstacleAvoidance );
+	robot.AddBehavior( &convertToTurnrate );
 	
 	robot.Run();
 	
