@@ -43,7 +43,9 @@ int goToPoint(Robot *robot, Point *at, Vector *velocity) {
 	
 	// Calculate our delta theta
 	dtheta = theta - velocity->direction;
-	
+    if ( dtheta > 3.14159 ) dtheta -= 2*3.14159;                                          
+    if ( dtheta < -3.14159 ) dtheta += 2*3.14159;
+    	
 	// Calculate our acceleration
 	accel = k_1*((*at) - dest) + k_2*(0.0 - velocity->magnitude);
 	
