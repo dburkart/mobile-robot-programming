@@ -6,6 +6,9 @@
 
 using namespace PlayerCc;
 
+#define PI 				3.14159
+#define E 				2.71828
+
 /**
  * The point structure is used to hold an (x, y) tuple, and provides a
  * few useful operations.

@@ -1,4 +1,5 @@
 #include "robot.h"
+#include "physics.h"
 
 Robot::Robot( PlayerClient *c, Path p, bool laser ) :
     client( c ),
@@ -80,7 +81,7 @@ void Robot::UpdateRangeData() {
         for ( int j = 0; j < bunchSize; j++ ) {
             double sample = GetRangeSample((i * bunchSize) + j);
 
-            Vector vTemp = (Vector){ ((3.14159 * ((i * bunchSize) + j)) / GetSampleSize()), 
+            Vector vTemp = (Vector){ ((PI * ((i * bunchSize) + j)) / GetSampleSize()), 
                 sample };
 
             if ( sample > 0.0 ) {
@@ -94,7 +95,13 @@ void Robot::UpdateRangeData() {
             vAvg.magnitude /= c;
             vAvg.direction /= c;
         }
-
+        
+        if ( vAvg.magnitude > 1.0 ) vAvg.magnitude = -1.0;
+        else {
+        	vAvg.magnitude = vAvg.magnitude * (1.0 * pow( E, -1.0*((i % (rdata.size()/2)) / ((ranger) ? 45 * 45 : 8))));
+			vAvg.magnitude = 1.0 / vAvg.magnitude;
+		}
+		
         rdata[i] = vAvg;
     }
     

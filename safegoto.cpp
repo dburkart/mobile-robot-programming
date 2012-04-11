@@ -20,7 +20,7 @@
 
 #define MAX_TURNRATE 	1.5
 #define MIN_TURNRATE	0.1
-#define MAX_XSPEED		0.4
+#define MAX_XSPEED		0.3
 
 using namespace PlayerCc;
 
@@ -43,7 +43,9 @@ int goToPoint(Robot *robot, Point *at, Vector *velocity) {
 	
 	// Calculate our delta theta
 	dtheta = theta - velocity->direction;
-	
+	if ( dtheta > PI ) dtheta -= 2*PI;
+	if ( dtheta < -PI ) dtheta += 2*PI;
+ 	
 	// Calculate our acceleration
 	accel = k_1*((*at) - dest) + k_2*(0.0 - velocity->magnitude);
 	
@@ -52,6 +54,7 @@ int goToPoint(Robot *robot, Point *at, Vector *velocity) {
 	std::cout << "distance: " << (*at) - dest << std::endl;
 	std::cout << "magnitude: " << velocity->magnitude << std::endl;
 	std::cout << "acceleration: " << accel << std::endl;
+	std::cout << "dtheta: " << dtheta << std::endl;
 	
 	if ( adjusting && fabs(dtheta) > MIN_TURNRATE ) {
 		velocity->direction = theta;
@@ -90,9 +93,7 @@ int obstacleAvoidance(Robot *robot, Point *at, Vector *velocity) {
 	// Calculate a repelling force (rForce) to push our robot away
 	// from obstacles.
 	for ( it = rdata->begin(); it < rdata->end(); it++ ) {
-		if ( it->magnitude == it->magnitude && it->magnitude > 0.0 && 
-			 it->magnitude < 1.0 && it->direction > ignoreAngle &&
-			 it->direction < (dtor(180) - ignoreAngle) ) {
+		if ( it->magnitude == it->magnitude && it->magnitude > 0.0 ) {
 			std::cout << "Obstacle: ";
 			it->print();
 			if (rForce.magnitude == 0.0) rForce = *it;
@@ -103,7 +104,7 @@ int obstacleAvoidance(Robot *robot, Point *at, Vector *velocity) {
 	std::cout << "rForce: ";
 	rForce.print();
 	
-	rForce.direction -= (.5 * 3.14159);
+	rForce.direction -= (.5 * PI);
 	rForce.direction += robot->GetVelocity()->direction;
 	
 	force = (-rForce) + *robot->GetVelocity();
