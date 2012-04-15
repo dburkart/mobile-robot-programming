@@ -14,7 +14,7 @@ typedef std::vector<Behavior> BehaviorList;
  */
 class Robot {
 public:
-
+	
 	Robot( PlayerClient *c, Path p, bool laser );
 	
 	~Robot() {}
@@ -23,7 +23,7 @@ public:
 	// Add a processing behavior to this robot. The order hooks are called
 	// is fifo, so add lowest processing layers first.
 	//
-	void AddBehavior( Behavior h );
+	virtual void AddBehavior( Behavior h );
 	
 	//
 	// Enter the run loop
@@ -53,8 +53,6 @@ protected:
 	Path		path;
 	RangeData	rdata;
 	int			bunchSize;
-	
-private:
 	
 	PlayerClient	*client;
 	Position2dProxy	pp;

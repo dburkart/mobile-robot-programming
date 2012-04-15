@@ -7,14 +7,17 @@
 #include <libplayerc++/playerc++.h>
 #include <pthread.h>
 
+#include "physics.h"
+#include "robot.h"
+#include "headlessRobot.h"
+
 using namespace PlayerCc;
 
 #define WIN_X 600
 #define WIN_Y 600
 
 static PlayerClient *pRobot;
-static Position2dProxy *pPosition;
-static SonarProxy *pSonar;
+static HeadlessRobot *robot;
 
 static int good;
 
@@ -54,24 +57,13 @@ void redisplay() {
     glutPostRedisplay();
 }
 
-void* robotLoop(void* args) {
-
-  while(true) {
-    
-    redisplay();
-    
-    double turnrate, speed;
-
-    // read from the proxies
-    pRobot->Read();
-
-    // Here is where you do your robot stuff
-    // including presumably updating your map somehow
-
-  }
-
+int mapper(Robot *robot, Point *at, Vector *velocity) {
+	redisplay();
 }
 
+void* robotLoop(void* args) {
+	robot->Run();
+}
 
 int main(int argc, char *argv[]) {
   int port = 0;
@@ -83,13 +75,8 @@ int main(int argc, char *argv[]) {
   }
 
   pRobot = new PlayerClient( host, port );
-  pPosition = new Position2dProxy( pRobot, 0 );
-  pSonar = new SonarProxy( pRobot, 0 );
-
-  printf("player connected on port %d, proxies allocated\n", port);
-  pPosition->SetMotorEnable(1);
-  
-  //  pthread_mutex_init(&mut, NULL);
+  robot = new HeadlessRobot( pRobot, false );
+  robot->AddBehavior( &mapper );
   
   pthread_t thread_id;
   pthread_create(&thread_id, NULL, robotLoop, NULL);
