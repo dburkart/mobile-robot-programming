@@ -18,6 +18,8 @@ using namespace PlayerCc;
 #define WIN_Y 	600
 #define PPM		20				// pixels per meter
 
+#define E       2.718
+
 static PlayerClient *pRobot;
 static HeadlessRobot *robot;
 
@@ -81,7 +83,7 @@ void mapVector( Point a, Vector v ) {
 			
 			double odds = oddsMap [ (WIN_X / 2) + (int)floor(PPM * b.x) ]
 								  [ (WIN_Y / 2) + (int)floor(PPM * b.y) ];
-			odds = (pow( 2.718, -1.0 * dist) / (1 - pow( 2.718, -1.0 * dist) + .1)) *
+			odds = (pow( E, -1.0 * dist) / (1 - pow( E, -1.0 * dist) + .1)) *
 					odds;
 					
 			oddsMap [ (WIN_X / 2) + (int)floor(PPM * b.x) ]
@@ -108,7 +110,7 @@ int mapper(Robot *robot, Point *at, Vector *velocity) {
     	//if ( v.direction > 3.14159 ) v.direction -= 2*3.14159;                                          
     	//if ( v.direction < -3.14159 ) v.direction += 2*3.14159;
     	
-    	for ( double j = .75; j >= 0.0; j -= .05 ) {
+    	for ( double j = dtor(15); j >= 0.0; j -= .01 ) {
     		mapVector( *at, (Vector){v.direction + j, v.magnitude} );
     		mapVector( *at, (Vector){v.direction - j, v.magnitude} );
 		}
