@@ -16,7 +16,7 @@ using namespace PlayerCc;
 
 #define WIN_X 	600
 #define WIN_Y 	600
-#define PPM		20				// pixels per meter
+#define PPM		24				// pixels per meter
 
 #define E       2.718
 
@@ -63,7 +63,6 @@ void redisplay() {
   	double odds = oddsMap[ i % WIN_X ][ i / WIN_Y ];
   	localMap[ i % WIN_X ][ i / WIN_Y ] = odds / (odds + 1);
   }
-  
 
   if(good)
     glutPostRedisplay();
@@ -72,29 +71,32 @@ void redisplay() {
 void mapVector( Point a, Vector v ) {
 	double dist = 0.0, mag = v.magnitude;
 	Point b = a + v.components();
+	int x, y;
 	
-	if ( v.magnitude < 5.0 ) {
-		
-		while (dist < mag ) {
-			if ( dist > .5 ) {
-				oddsMap [ (WIN_X / 2) + (int)floor(PPM * b.x) ]
-						[ (WIN_Y / 2) + (int)floor(PPM * b.y) ] *= .3;
-			} else {
+	while (dist < mag ) {
+		if ( dist > .1 || mag >= 5.0) {
+			x = (WIN_X / 2) + (int)floor(PPM * b.x);
+			y = (WIN_Y / 2) + (int)floor(PPM * b.y);
 			
-			double odds = oddsMap [ (WIN_X / 2) + (int)floor(PPM * b.x) ]
-								  [ (WIN_Y / 2) + (int)floor(PPM * b.y) ];
-			odds = (pow( E, -1.0 * dist) / (1 - pow( E, -1.0 * dist) + .1)) *
-					odds;
-					
-			oddsMap [ (WIN_X / 2) + (int)floor(PPM * b.x) ]
-					[ (WIN_Y / 2) + (int)floor(PPM * b.y) ] = odds;
+			if ( x < WIN_X && y < WIN_Y )
+				oddsMap [ x ][ y ] *= .8;
+		} else {
+			x = (WIN_X / 2) + (int)floor(PPM * b.x);
+			y = (WIN_Y / 2) + (int)floor(PPM * b.y);
 			
+			if ( x < WIN_X && y < WIN_Y ) {
+				double odds = oddsMap [ x ][ y ];
+				odds = (pow( E, (-1.0 * dist)) / (1 - pow( E, (-1.0 * dist)) + .1)) *
+						odds;
+						
+				oddsMap [ x ][ y ] = odds;
 			}
-			
-			dist += .1;
-			v.magnitude -= .1;
-			b = a + v.components();
+		
 		}
+		
+		dist += .07;
+		v.magnitude -= .07;
+		b = a + v.components();
 	}
 }
 
@@ -105,10 +107,13 @@ int mapper(Robot *robot, Point *at, Vector *velocity) {
 	
 	for ( int i = 0; i < sensorData->size(); i++ ) {
 		Vector v = (*sensorData)[i];
+		v.direction -= .5*3.14159;
 		v.direction += velocity->direction;
 		
-    	//if ( v.direction > 3.14159 ) v.direction -= 2*3.14159;                                          
-    	//if ( v.direction < -3.14159 ) v.direction += 2*3.14159;
+		v.print();
+		
+    	if ( v.direction > 3.14159 ) v.direction -= 2*3.14159;                                          
+    	if ( v.direction < -3.14159 ) v.direction += 2*3.14159;
     	
     	for ( double j = dtor(15); j >= 0.0; j -= .01 ) {
     		mapVector( *at, (Vector){v.direction + j, v.magnitude} );
