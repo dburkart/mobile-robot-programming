@@ -9,4 +9,5 @@ find_package(OpenGL)
 
 PLAYER_ADD_PLAYERCPP_CLIENT (safegoto SOURCES safegoto.cpp robot.cpp LINKFLAGS)
 PLAYER_ADD_PLAYERCPP_CLIENT (mapper SOURCES robot.cpp headlessRobot.cpp mapper.cpp LINKFLAGS)
+PLAYER_ADD_PLAYERCPP_CLIENT (navigator SOURCES robot.cpp planning.cpp navigator.cpp LINKFLAGS)
 target_link_libraries(mapper ${GLUT_LIBRARY} ${OPENGL_LIBRARY} X11 Xext)
