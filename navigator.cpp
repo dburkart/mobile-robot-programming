@@ -124,6 +124,10 @@ int obstacleAvoidance(Robot *robot, Point *at, Vector *velocity) {
 	}
 }
 
+int localize( Robot *robot, Point *at, Vector *velocity ) {
+
+}
+
 int convertToTurnrate(Robot *robot, Point *at, Vector *velocity) {
 	double dtheta = 0.0;
 	
@@ -144,28 +148,14 @@ int convertToTurnrate(Robot *robot, Point *at, Vector *velocity) {
 int main( int argc, char *argv[] ) {
 	Path path;
 	std::ifstream input;
-	
-	input.open( argv[2], std::ifstream::in );
-	while (!input.eof()) {
-		char buff[12];
-		Point p;
-		
-		input.getline( buff, 12 );
-		
-		if (input.eof()) break;
-		
-		p.x = atof( strtok( buff, " " ) );
-		p.y = atof( strtok( NULL, " " ) );
-		
-		path.push_back( p );
-	}
-	
 	PlayerClient *client;
+	
+	path.push_back( (Point){ 0, 0 } );
 	
 	if ( argc == 4 ) {
 		char *host;
 		int port;
-		host = strtok( argv[3], ":" );
+		host = strtok( argv[2], ":" );
 		port = atoi( strtok( NULL, ":" ) );
 		client = new PlayerClient( host, port );
 		
@@ -179,6 +169,7 @@ int main( int argc, char *argv[] ) {
 	robot.AddBehavior( &goToPoint );
 	robot.AddBehavior( &obstacleAvoidance );
 	robot.AddBehavior( &convertToTurnrate );
+	robot.AddBehavior( &localize );
 	
 	robot.Run();
 	

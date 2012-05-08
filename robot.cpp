@@ -100,6 +100,10 @@ void Robot::UpdateRangeData() {
     
 }
 
+void Robot::UpdatePath( Path p ) {
+	path = p;
+}
+
 RangeData *Robot::GetRangeData() {
     return &rdata;
 }

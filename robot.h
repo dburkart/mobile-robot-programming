@@ -36,6 +36,8 @@ public:
 	
 	void UpdateRangeData();
 	
+	void UpdatePath( Path );
+	
 	RangeData *GetRangeData();
 	
 	const Vector *GetVelocity();
