@@ -22,6 +22,8 @@
 #define MIN_TURNRATE	0.1
 #define MAX_XSPEED		0.4
 
+#define PI				3.14159
+
 using namespace PlayerCc;
 
 bool turning = false;
@@ -51,9 +53,9 @@ int goToPoint(Robot *robot, Point *at, Vector *velocity) {
 	
 	if (fabs(dtheta) <= MIN_TURNRATE) turning = false; 
 	
-	std::cout << "distance: " << (*at) - dest << std::endl;
-	std::cout << "magnitude: " << velocity->magnitude << std::endl;
-	std::cout << "acceleration: " << accel << std::endl;
+	//std::cout << "distance: " << (*at) - dest << std::endl;
+	//std::cout << "magnitude: " << velocity->magnitude << std::endl;
+	//std::cout << "acceleration: " << accel << std::endl;
 	
 	if ( adjusting && fabs(dtheta) > MIN_TURNRATE ) {
 		velocity->direction = theta;
@@ -95,37 +97,91 @@ int obstacleAvoidance(Robot *robot, Point *at, Vector *velocity) {
 		if ( it->magnitude == it->magnitude && it->magnitude > 0.0 && 
 			 it->magnitude < 1.0 && it->direction > ignoreAngle &&
 			 it->direction < (dtor(180) - ignoreAngle) ) {
-			std::cout << "Obstacle: ";
-			it->print();
+			//std::cout << "Obstacle: ";
+			//it->print();
 			if (rForce.magnitude == 0.0) rForce = *it;
 			else rForce = rForce + (*it);
 		}
 	}
 	
-	std::cout << "rForce: ";
-	rForce.print();
+	//std::cout << "rForce: ";
+	//rForce.print();
 	
 	rForce.direction -= (.5 * 3.14159);
 	rForce.direction += robot->GetVelocity()->direction;
 	
 	force = (-rForce) + *robot->GetVelocity();
 	
-	std::cout << "force: ";
-	force.print();
+	//std::cout << "force: ";
+	//force.print();
 	
 	if ( fabs(force.direction - robot->GetVelocity()->direction) > MIN_TURNRATE && 
 		 velocity->magnitude > 0.0 && rForce.magnitude > 0.0) {
 		
-		std::cout << "*Obstacle Avoidance*: ";
-		velocity->print();
+		//std::cout << "*Obstacle Avoidance*: ";
+		//velocity->print();
 		velocity->direction = force.direction;
 		
 		turning = true;
 	}
 }
 
-int localize( Robot *robot, Point *at, Vector *velocity ) {
+// Localization bookkeeping
+bool localizing = true;
+int spinning = 0;
+double probs[8] = { 1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8 };
+double data[360];
 
+int localize( Robot *robot, Point *at, Vector *velocity ) {
+	Point goal = robot->GetGoal();
+	
+	if ( goal.x == 0 && goal.y == 0 ) {
+		RangeData *d = robot->GetRangeData();
+		
+		// Turn around 360 degrees
+		if ( spinning < 360 ) {
+			double avg = 0.0;
+			for ( int i = 0; i < d->size(); i++ ) {
+				avg += (*d)[i].magnitude;
+			}
+			avg /= d->size();
+			
+			data[ (int)rtod(velocity->direction) ] = avg;
+			
+			velocity->direction += dtor(7);
+			
+			spinning += 1;
+			
+		} else {
+			double a = 0.0, b = 0.0, sd = 0.0;
+			
+			for (int i = 0; i < 360; i++) {
+				a += data[i] * data[i];
+				b += data[i];
+			}
+			
+			sd = sqrt( (a / 360) - ((b / 360) * (b / 360)) );
+			
+			std::cout << "standard deviation: " << sd << std::endl;
+			
+		// compare all readings with expected readings
+		
+		// update probablities based on result of previous step
+		
+		// if not in ambiguous place:
+		// choose the highest probability
+		
+		//     get path (call PlanPath)
+		
+		//     update robot's path
+		
+		// else
+		// drive in one direction, use nearest intersection to localize
+		}
+		
+		// zero out velocity->magnitude
+		velocity->magnitude = 0;
+	}
 }
 
 int convertToTurnrate(Robot *robot, Point *at, Vector *velocity) {
@@ -142,7 +198,7 @@ int convertToTurnrate(Robot *robot, Point *at, Vector *velocity) {
 	// Set our velocity's direction to a turnrate
 	velocity->direction = (fabs(dtheta) > MAX_TURNRATE) ? ((dtheta > 0.0) ? MAX_TURNRATE : -MAX_TURNRATE) : dtheta;
 	
-	velocity->print();
+	//velocity->print();
 }
 
 int main( int argc, char *argv[] ) {
@@ -152,7 +208,7 @@ int main( int argc, char *argv[] ) {
 	
 	path.push_back( (Point){ 0, 0 } );
 	
-	if ( argc == 4 ) {
+	if ( argc == 3 ) {
 		char *host;
 		int port;
 		host = strtok( argv[2], ":" );

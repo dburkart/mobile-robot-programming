@@ -43,7 +43,7 @@ int Robot::Run() {
         BehaviorList::iterator it;
         UpdateRangeData();
 
-        std::cout << "Position: (" << pp.GetXPos() << ", " << pp.GetYPos() << ")\n" << std::endl;
+        //std::cout << "Position: (" << pp.GetXPos() << ", " << pp.GetYPos() << ")\n" << std::endl;
         Point p = position 	= (Point){ pp.GetXPos(), pp.GetYPos() };
         Vector v = velocity = (Vector){ pp.GetYaw(), velocity.magnitude };
 
