@@ -129,8 +129,36 @@ int obstacleAvoidance(Robot *robot, Point *at, Vector *velocity) {
 // Localization bookkeeping
 bool localizing = true;
 int spinning = 0;
-double probs[8] = { 1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8 };
+double probs[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 double data[360];
+
+Point bounds[6] = {
+		(Point){ .109, .116 },			// 6665, 6672
+		(Point){ .117, .125 },			// 6666, 6667
+		(Point){ .135, .153 },			// 6668
+		(Point){ .126, .134 },			// 6669
+		(Point){ 0.0 , .108 },			// 6670
+		(Point){ .154, .2 }				// 6671
+	};
+	
+Point initials[8] = {
+		(Point){ 8.5, -7.0 },			// 6665
+		(Point){ -3.0, -9.8 },			// 6666
+		(Point){ -43.0, -9.8 },			// 6667
+		(Point){ -27.0, 13.1 },			// 6668
+		(Point){ -11.7, 13.1 },			// 6669
+		(Point){ 21.0, 9.5 },			// 6670
+		(Point){ 27.0, 13.3 },			// 6671
+		(Point){ 8.5, 3.5 }				// 6672
+		
+	};
+
+Point intersections[4] = {
+        (Point){ 8.5, -9.8 },
+        (Point){ -47.68, -9.8 },
+        (Point){ -47.68, 13.1 },    
+        (Point){ 8.5, 13.1 }
+    };
 
 int localize( Robot *robot, Point *at, Vector *velocity ) {
 	Point goal = robot->GetGoal();
@@ -154,6 +182,7 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 			
 		} else {
 			double a = 0.0, b = 0.0, sd = 0.0;
+			int index;
 			
 			for (int i = 0; i < 360; i++) {
 				a += data[i] * data[i];
@@ -162,11 +191,26 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 			
 			sd = sqrt( (a / 360) - ((b / 360) * (b / 360)) );
 			
-			std::cout << "standard deviation: " << sd << std::endl;
+			//std::cout << "standard deviation: " << sd << std::endl;
 			
-		// compare all readings with expected readings
-		
-		// update probablities based on result of previous step
+			for (int i = 0; i < 6; i++) {
+				if ( sd >= bounds[i].x && sd <= bounds[i].y ) {
+					index = i;
+					break;
+				}
+			}
+			
+			switch (index) {
+				case 0:
+					probs[ 0 ] = probs[ 7 ] = .5;
+					break;
+				case 1:
+					probs[ 1 ] = probs[ 2 ] = .5;
+					break;
+				default:
+					probs[ index + 1 ] = 1.0;
+					break;
+			}
 		
 		// if not in ambiguous place:
 		// choose the highest probability
