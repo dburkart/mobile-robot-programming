@@ -1,6 +1,6 @@
 #include "planning.h"
 
-Path PlanPath( Point src, Point dest ) {
+Path PlanPath( Point src, Path dests ) {
 
 	return Path();
 }
