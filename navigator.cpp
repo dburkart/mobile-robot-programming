@@ -153,6 +153,13 @@ Point initials[8] = {
 		
 	};
 
+Point intersections[4] = {
+        (Point){ 8.5, -9.8 },
+        (Point){ -47.68, -9.8 },
+        (Point){ -47.68, 13.1 },    
+        (Point){ 8.5, 13.1 }
+    };
+
 int localize( Robot *robot, Point *at, Vector *velocity ) {
 	Point goal = robot->GetGoal();
 	
