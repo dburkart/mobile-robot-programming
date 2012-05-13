@@ -17,6 +17,7 @@
 
 #include "physics.h"
 #include "robot.h"
+#include "planning.h"
 
 #define MAX_TURNRATE 	1.5
 #define MIN_TURNRATE	0.1
@@ -131,6 +132,7 @@ bool localizing = true;
 int spinning = 0;
 double probs[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 double data[360];
+Path goals;
 
 Point bounds[6] = {
 		(Point){ .109, .116 },			// 6665, 6672
@@ -154,11 +156,11 @@ Point initials[8] = {
 	};
 
 Point intersections[4] = {
-        (Point){ 8.5, -9.8 },
-        (Point){ -47.68, -9.8 },
-        (Point){ -47.68, 13.1 },    
-        (Point){ 8.5, 13.1 }
-    };
+		(Point){ 8.5, -9.8 },
+		(Point){ -47.68, -9.8 },
+		(Point){ -47.68, 13.1 },    
+		(Point){ 8.5, 13.1 }
+	};
 
 int localize( Robot *robot, Point *at, Vector *velocity ) {
 	Point goal = robot->GetGoal();
@@ -212,15 +214,11 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 					break;
 			}
 		
-		// if not in ambiguous place:
-		// choose the highest probability
-		
-		//     get path (call PlanPath)
-		
-		//     update robot's path
-		
-		// else
-		// drive in one direction, use nearest intersection to localize
+			if ( probs[0] == 0.0 && probs[1] == 0.0 ) {
+				robot->UpdatePath( PlanPath( initials[ index + 1 ], goals ) );
+			} else {
+				// drive in one direction, use nearest intersection to localize
+			}
 		}
 		
 		// zero out velocity->magnitude
@@ -250,17 +248,32 @@ int main( int argc, char *argv[] ) {
 	std::ifstream input;
 	PlayerClient *client;
 	
+	input.open( argv[2], std::ifstream::in );
+	while (!input.eof()) {
+		char buff[12];
+		Point p;
+		
+		input.getline( buff, 12 );
+		
+		if (input.eof()) break;
+		
+		p.x = atof( strtok( buff, " " ) );
+		p.y = atof( strtok( NULL, " " ) );
+		
+		goals.push_back( p );
+		
+	}
+	
 	path.push_back( (Point){ 0, 0 } );
 	
-	if ( argc == 3 ) {
+	if ( argc == 4 ) {
 		char *host;
 		int port;
-		host = strtok( argv[2], ":" );
+		host = strtok( argv[3], ":" );
 		port = atoi( strtok( NULL, ":" ) );
 		client = new PlayerClient( host, port );
 		
 	} else {
-		//client = new PlayerClient( "129.21.133.159", 6665 );
 		client = new PlayerClient( "localhost", 6665 );
 	}
 	
