@@ -74,7 +74,7 @@ int goToPoint(Robot *robot, Point *at, Vector *velocity) {
 	
 	// We've gotten to the point, so stop the robot, get the next point, and
 	// reset 'turning'
-	else {
+	else if ( !localizing ) {
 		velocity->direction = robot->GetVelocity()->direction;
 		robot->GoalAchieved();
 		adjusting = true;
@@ -128,8 +128,8 @@ int obstacleAvoidance(Robot *robot, Point *at, Vector *velocity) {
 }
 
 // Localization bookkeeping
-bool localizing = true;
-int spinning = 0;
+bool localizing = true, travelling = false;
+int spinning = 0, ind = -1;
 double probs[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 double data[360];
 Path goals;
@@ -168,8 +168,42 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 	if ( goal.x == 0 && goal.y == 0 ) {
 		RangeData *d = robot->GetRangeData();
 		
+		if ( ind != -1 ) {
+			if ( probs[0] == 0.0 && probs[1] == 0.0 ) {
+				robot->UpdatePath( PlanPath( initials[ ind + 1 ], goals ) );
+			} else {
+				double left, right;
+				
+				left = robot->GetRangeSample( 1 );
+				right = robot->GetRangeSample( 8 );
+				
+				std::cout << left << ", " << right << std::endl;
+				
+				if ( left <= right + .02 && left >= right - .02 &&
+					 left < 4.9 ) {
+					 travelling = true;
+					 velocity->magnitude = .5;
+				} else {
+					if ( !travelling ) {
+						velocity->direction -= dtor(7);
+					} else {
+						if ( left < 4.9 ) {
+							if ( left > right ) {
+								velocity->direction += dtor( 7 );
+							} else {
+								velocity->direction -= dtor( 7 );
+							}
+						} else {
+							velocity->magnitude = 0;
+							std::cout << "Intersection!" << std::endl;
+						}
+					}
+				}
+				// drive in one direction, use nearest intersection to localize
+			}
+		}
 		// Turn around 360 degrees
-		if ( spinning < 360 ) {
+		else if ( spinning < 360 ) {
 			double avg = 0.0;
 			for ( int i = 0; i < d->size(); i++ ) {
 				avg += (*d)[i].magnitude;
@@ -184,7 +218,6 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 			
 		} else {
 			double a = 0.0, b = 0.0, sd = 0.0;
-			int index;
 			
 			for (int i = 0; i < 360; i++) {
 				a += data[i] * data[i];
@@ -197,12 +230,12 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 			
 			for (int i = 0; i < 6; i++) {
 				if ( sd >= bounds[i].x && sd <= bounds[i].y ) {
-					index = i;
+					ind = i;
 					break;
 				}
 			}
 			
-			switch (index) {
+			switch (ind) {
 				case 0:
 					probs[ 0 ] = probs[ 7 ] = .5;
 					break;
@@ -210,19 +243,15 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 					probs[ 1 ] = probs[ 2 ] = .5;
 					break;
 				default:
-					probs[ index + 1 ] = 1.0;
+					probs[ ind + 1 ] = 1.0;
 					break;
-			}
-		
-			if ( probs[0] == 0.0 && probs[1] == 0.0 ) {
-				robot->UpdatePath( PlanPath( initials[ index + 1 ], goals ) );
-			} else {
-				// drive in one direction, use nearest intersection to localize
 			}
 		}
 		
 		// zero out velocity->magnitude
-		velocity->magnitude = 0;
+		if ( localizing && !travelling ) {
+			velocity->magnitude = 0;
+		}
 	}
 }
 
@@ -264,7 +293,7 @@ int main( int argc, char *argv[] ) {
 		
 	}
 	
-	path.push_back( (Point){ 0, 0 } );
+	path.push_back( (Point){ 0.0, 0.0 } );
 	
 	if ( argc == 4 ) {
 		char *host;
