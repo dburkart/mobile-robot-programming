@@ -175,7 +175,7 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 		
 		if ( ind != -1 ) {
 			if ( probs[0] == 0.0 && probs[1] == 0.0 ) {
-				robot->UpdatePath( PlanPath( initials[ ind + 1 ], goals ) );
+				robot->UpdatePath( PlanPath( ((*at) + initials[ ind + 1 ]), goals, initials[ ind + 1 ] ) );
 			} else {
 				double left, right;
 				
@@ -242,9 +242,8 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 								}
 							}
 							
-							// Uncomment when planning is ready.
-							// robot->UpdatePath( PlanPath( initials[ bestIndex ], goals ) );
-							std::cout << "Localization done! Origin is at: (" << initials[bestIndex].x << ", " << initials[bestIndex].y << ")" << std::endl;
+							robot->UpdatePath( PlanPath( (*at) + initials[ bestIndex ], goals, initials[ bestIndex ] ) );
+							//std::cout << "Localization done! Origin is at: (" << initials[bestIndex].x << ", " << initials[bestIndex].y << ")" << std::endl;
 							localizing = false;
 						}
 					}

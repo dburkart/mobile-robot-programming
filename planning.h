@@ -52,7 +52,7 @@ struct Node {
 // plan to multiple goals
 // calls 'planToGoal' for each of the goal specified here
 //
-Path PlanPath( Point src, Path dests );
+Path PlanPath( Point src, Path dests, Point offset );
 
 //
 // plan to a single goal

@@ -24,7 +24,7 @@ std::vector<Node*> openList;
 std::vector<Node*> closedList;
 
 
-Path PlanPath( Point src, Path dests ) {
+Path PlanPath( Point src, Path dests, Point offset ) {
 
 /*	
 	011111111111110
