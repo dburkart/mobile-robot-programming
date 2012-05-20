@@ -17,6 +17,7 @@
 
 #include "physics.h"
 #include "robot.h"
+#include "planning.h"
 
 #define MAX_TURNRATE 	1.5
 #define MIN_TURNRATE	0.1
@@ -249,6 +250,27 @@ int main( int argc, char *argv[] ) {
 	Path path;
 	std::ifstream input;
 	PlayerClient *client;
+	
+	std::cout << "start" << std::endl;
+	
+	Path dests;
+	dests.push_back( (Point){41.6, 13.3} );
+	dests.push_back( (Point){28.0, -9.4} );
+	dests.push_back( (Point){-47.5, -9.6});
+	dests.push_back( (Point){-55.0, 14.0});
+	
+	//Path testPath = planToGoal( (Point){ 8.5, -7.0 }, (Point){ -58.75, 7.80 } );
+	Path testPath = PlanPath( (Point){ 8.5, -7.0 }, dests );
+	
+	std::cout << "Path";
+	
+	for (int i = 0; i < testPath.size(); i++) {
+		
+		std::cout << " => (" << testPath[i].x << ", " << testPath[i].y << ")";
+		
+	}
+	
+	std::cout << std::endl;
 	
 	path.push_back( (Point){ 0, 0 } );
 	
