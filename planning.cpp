@@ -53,6 +53,14 @@ Path PlanPath( Point src, Path dests, Point offset ) {
 		planToGoal(path.back(), dests[i], offset);
 		
 	}
+	
+	std::cout << "Path";
+
+	for (int i = 0; i < path.size(); i++) {
+		
+		std::cout << " => (" << path[i].x << ", " << path[i].y << ")";
+		
+	}
 
 	return path;
 }
@@ -125,14 +133,14 @@ Path planToGoal(Point src, Point dest, Point offset) {
 			std::cout << "done! openList.size = " << openList.size() << " constructing path..." << std::endl;
 			std::vector<Node*> pathOfNodes = constructPath((*current).ancestor, current);
 			if (!((*pathOfNodes.front()).point == src) && !(path.back() == src))
-				path.push_back(src);
+				path.push_back((Point){src.x - offset.x, src.y - offset.y});
 			for (int i = 0; i < pathOfNodes.size(); i++) {
 				
 				path.push_back((Point){(*pathOfNodes[i]).point.x - offset.x, (*pathOfNodes[i]).point.y - offset.y} );
 				
 			}
 			if (!((*pathOfNodes.back()).point == dest))
-				path.push_back(dest);
+				path.push_back((Point){dest.x - offset.x, dest.y - offset.y});
 			return path;
 		}
 		
