@@ -42,7 +42,7 @@ Path PlanPath( Point src, Path dests, Point offset ) {
 	00000000000000000
 */
 
-	//path.push_back((src);
+	path.push_back((Point){src.x - offset.x, src.y - offset.y});
 
 	for (int i = 0; i < dests.size(); i++) {
 		
@@ -128,7 +128,7 @@ Path planToGoal(Point src, Point dest, Point offset) {
 				path.push_back(src);
 			for (int i = 0; i < pathOfNodes.size(); i++) {
 				
-				path.push_back((Point){(*pathOfNodes[i]).point.x + offset.x, (*pathOfNodes[i]).point.y + offset.y} );
+				path.push_back((Point){(*pathOfNodes[i]).point.x - offset.x, (*pathOfNodes[i]).point.y - offset.y} );
 				
 			}
 			if (!((*pathOfNodes.back()).point == dest))
