@@ -23,7 +23,10 @@ Path path;
 std::vector<Node*> openList;
 std::vector<Node*> closedList;
 
-
+//
+// plan to multiple goals
+// calls 'planToGoal' for each of the goal specified here
+//
 Path PlanPath( Point src, Path dests, Point offset ) {
 
 /*	
@@ -42,7 +45,7 @@ Path PlanPath( Point src, Path dests, Point offset ) {
 	00000000000000000
 */
 
-	path.push_back((Point){src.x - offset.x, src.y - offset.y});
+	path.push_back(src);
 
 	for (int i = 0; i < dests.size(); i++) {
 		
@@ -58,13 +61,20 @@ Path PlanPath( Point src, Path dests, Point offset ) {
 
 	for (int i = 0; i < path.size(); i++) {
 		
+		path[i].x -= offset.x;
+		path[i].y -= offset.y;
 		std::cout << " => (" << path[i].x << ", " << path[i].y << ")";
-		
+				
 	}
+	
+	std::cout << std::endl;
 
 	return path;
 }
 
+//
+// plan to a single goal
+//
 Path planToGoal(Point src, Point dest, Point offset) {
 	
 	int startIndex_h;
@@ -133,14 +143,14 @@ Path planToGoal(Point src, Point dest, Point offset) {
 			std::cout << "done! openList.size = " << openList.size() << " constructing path..." << std::endl;
 			std::vector<Node*> pathOfNodes = constructPath((*current).ancestor, current);
 			if (!((*pathOfNodes.front()).point == src) && !(path.back() == src))
-				path.push_back((Point){src.x - offset.x, src.y - offset.y});
+				path.push_back(src);
 			for (int i = 0; i < pathOfNodes.size(); i++) {
 				
-				path.push_back((Point){(*pathOfNodes[i]).point.x - offset.x, (*pathOfNodes[i]).point.y - offset.y} );
+				path.push_back( (*pathOfNodes[i]).point );
 				
 			}
 			if (!((*pathOfNodes.back()).point == dest))
-				path.push_back((Point){dest.x - offset.x, dest.y - offset.y});
+				path.push_back(dest);
 			return path;
 		}
 		
@@ -169,93 +179,6 @@ Path planToGoal(Point src, Point dest, Point offset) {
 		checkNeighbor(current, indeces, 6); // right
 		checkNeighbor(current, indeces, 2); // up
 		checkNeighbor(current, indeces, 8); // down
-		/*if (indeces[1] > 0 )
-			neighborPoint = mapPoints[indeces[0]][indeces[1]-1];
-		else
-			neighborPoint = (Point){0.0,0.0};
-		
-		if (!(neighborPoint == (Point){0.0,0.0}) && !(inClosedList(neighborPoint))) {
-			std::cout << "leftNeighbor(" << neighborPoint.x << ", " 
-							<< neighborPoint.y << ")" << std::endl;
-			double gCost = (*current).gCost + (*current).point.distanceTo(neighborPoint);
-			
-			// add neighbor in openList if it's not there already
-			if (!inOpenList(neighborPoint)) {
-				
-				double hCost = neighborPoint.distanceTo(goal);
-				Node* temp = new Node(neighborPoint, current, gCost, hCost, false);
-				openList.push_back(temp);
-				
-			}
-			
-		}
-		
-		// try right
-		if (indeces[1] < WIDTH-1)
-			neighborPoint = mapPoints[indeces[0]][indeces[1]+1];
-		else
-			neighborPoint = (Point){0.0,0.0};
-		
-		if (!(neighborPoint == (Point){0.0,0.0}) && !(inClosedList(neighborPoint))) {
-			std::cout << "rightNeighbor(" << neighborPoint.x << ", " 
-								<< neighborPoint.y << ")" << std::endl;
-			double gCost = (*current).gCost + (*current).point.distanceTo(neighborPoint);
-			
-			// add neighbor in openList if it's not there already
-			if (!inOpenList(neighborPoint)) {
-				
-				double hCost = neighborPoint.distanceTo(goal);
-				Node* temp = new Node(neighborPoint, current, gCost, hCost, false);
-				openList.push_back(temp);
-				
-			}
-			
-		}
-		
-		// try up
-		if (indeces[0] > 0)
-			neighborPoint = mapPoints[indeces[0]-1][indeces[1]];
-		else
-			neighborPoint = (Point){0.0,0.0};
-		
-		if (!(neighborPoint == (Point){0.0,0.0}) && !(inClosedList(neighborPoint))) {
-			std::cout << "upNeighbor(" << neighborPoint.x << ", " 
-								<< neighborPoint.y << ")" << std::endl;
-			double gCost = (*current).gCost + (*current).point.distanceTo(neighborPoint);
-			
-			// add neighbor in openList if it's not there already
-			if (!inOpenList(neighborPoint)) {
-				
-				double hCost = neighborPoint.distanceTo(goal);
-				Node* temp = new Node(neighborPoint, current, gCost, hCost, false);
-				openList.push_back(temp);
-				
-			}
-			
-		}
-		
-		// try down
-		if (indeces[0] < HEIGHT-1)
-			neighborPoint = mapPoints[indeces[0]+1][indeces[1]];
-		else
-			neighborPoint = (Point){0.0,0.0};
-		
-		if (!(neighborPoint == (Point){0.0,0.0}) && !(inClosedList(neighborPoint))) {
-			std::cout << "downNeighbor(" << neighborPoint.x << ", " 
-								<< neighborPoint.y << ")" << std::endl;
-			double gCost = (*current).gCost + (*current).point.distanceTo(neighborPoint);
-			
-			// add neighbor in openList if it's not there already
-			if (!inOpenList(neighborPoint)) {
-				
-				double hCost = neighborPoint.distanceTo(goal);
-				Node* temp = new Node(neighborPoint, current, gCost, hCost, false);
-				openList.push_back(temp);
-				
-			}
-			
-		}
-		*/
 		
 		std::cout << "##########################################" << std::endl;
 		level++;
@@ -265,6 +188,11 @@ Path planToGoal(Point src, Point dest, Point offset) {
 	return Path();
 }
 
+//
+// Find the the point in our custom map that is closest 
+// to the given point.
+// returns the indeces to the closest point in the 2D array.
+//
 int* findClosestPoint(Point p) {
 	
 	int index_h = 0;
