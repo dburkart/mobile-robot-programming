@@ -57,7 +57,7 @@ Path PlanPath( Point src, Path dests, Point offset );
 //
 // plan to a single goal
 //
-Path planToGoal(Point src, Point dest);
+Path planToGoal(Point src, Point dest, Point offset);
 
 //
 // Find the the point in our custom map that is closest 

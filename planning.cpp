@@ -42,7 +42,7 @@ Path PlanPath( Point src, Path dests, Point offset ) {
 	00000000000000000
 */
 
-	path.push_back(src);
+	//path.push_back((src);
 
 	for (int i = 0; i < dests.size(); i++) {
 		
@@ -50,14 +50,14 @@ Path PlanPath( Point src, Path dests, Point offset ) {
 		// the global variable 'path')
 		openList.clear();
 		closedList.clear();
-		planToGoal(path.back(), dests[i]);
+		planToGoal(path.back(), dests[i], offset);
 		
 	}
 
 	return path;
 }
 
-Path planToGoal(Point src, Point dest) {
+Path planToGoal(Point src, Point dest, Point offset) {
 	
 	int startIndex_h;
 	int startIndex_w;
@@ -128,7 +128,7 @@ Path planToGoal(Point src, Point dest) {
 				path.push_back(src);
 			for (int i = 0; i < pathOfNodes.size(); i++) {
 				
-				path.push_back((*pathOfNodes[i]).point);
+				path.push_back((Point){(*pathOfNodes[i]).point.x + offset.x, (*pathOfNodes[i]).point.y + offset.y} );
 				
 			}
 			if (!((*pathOfNodes.back()).point == dest))
