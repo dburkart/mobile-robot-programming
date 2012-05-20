@@ -25,6 +25,15 @@ struct Point {
 		return (Point){ x + p.x, y + p.y };
 	}
 	
+	bool operator==( const Point& p) const {
+		
+		if (p.x == x && p.y == y)
+			return true;
+		else
+			return false;
+		
+	}
+	
 	//
 	// Return a 0-based indication of what quadrant this point is in.
 	//
@@ -84,6 +93,16 @@ struct Point {
 		}
 		
 		return t;
+	}
+
+	//
+	// Calculates the distance from this point to point p;
+	//
+	double distanceTo(Point p) {
+
+		return (double) sqrt(	(p.x - x) * (p.x - x) +
+					(p.y - y) * (p.y - y) );
+
 	}
 };
 
