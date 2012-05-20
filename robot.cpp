@@ -57,7 +57,7 @@ int Robot::Run() {
         // Save our magnitude (no GPS!)
         velocity.magnitude = v.magnitude;
 
-        if ( currentGoal == path.end() ) { std::cout << "here!"; break; }
+        if ( currentGoal == path.end() && currentGoal->x != 0 && currentGoal->y != 0 ) { std::cout << "here!"; break; }
 
         client->Read();
     }

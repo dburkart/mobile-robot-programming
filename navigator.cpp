@@ -29,6 +29,7 @@ using namespace PlayerCc;
 
 bool turning = false;
 bool adjusting = true;
+bool localizing = true;
 
 double k_1 = 1.0, k_2 = 1.0;
 
@@ -58,14 +59,14 @@ int goToPoint(Robot *robot, Point *at, Vector *velocity) {
 	//std::cout << "magnitude: " << velocity->magnitude << std::endl;
 	//std::cout << "acceleration: " << accel << std::endl;
 	
-	if ( adjusting && fabs(dtheta) > MIN_TURNRATE ) {
+	if ( !localizing && adjusting && fabs(dtheta) > MIN_TURNRATE ) {
 		velocity->direction = theta;
 		velocity->magnitude = 0.0;
 	}
 	
 	// If we haven't started moving yet, OR we have and are still far enough
 	// away, and we haven't overshot.
-	else if ( !velocity->magnitude || velocity->magnitude == MAX_XSPEED || ((*at) - dest > .05 && accel <= 0.0) ) {
+	else if ( !localizing && (!velocity->magnitude || velocity->magnitude == MAX_XSPEED || ((*at) - dest > .05 && accel <= 0.0)) ) {
 		velocity->direction = (turning) ? theta : robot->GetVelocity()->direction;
 		velocity->magnitude = ( MAX_XSPEED < velocity->magnitude + accel) ? 
 			MAX_XSPEED : velocity->magnitude + accel;
@@ -128,7 +129,7 @@ int obstacleAvoidance(Robot *robot, Point *at, Vector *velocity) {
 }
 
 // Localization bookkeeping
-bool localizing = true, travelling = false;
+bool travelling = false;
 int spinning = 0, ind = -1;
 double probs[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 double data[360];
@@ -155,11 +156,15 @@ Point initials[8] = {
 		
 	};
 
-Point intersections[4] = {
-		(Point){ 8.5, -9.8 },
-		(Point){ -47.68, -9.8 },
-		(Point){ -47.68, 13.1 },    
-		(Point){ 8.5, 13.1 }
+Point intersections[8] = {
+		(Point){ 8.6, 11.65},
+		(Point){ 8.5, -8.5 },
+		(Point){ 7.5, -10.0 },
+		(Point){ -46.5, -9.9 },
+		(Point){ -47.5, -8.8 },
+		(Point){ -47.5, 11.8 },
+		(Point){ -46.5, 13.1 },    
+		(Point){ 7.5, 13.1 },
 	};
 
 int localize( Robot *robot, Point *at, Vector *velocity ) {
@@ -180,22 +185,67 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 				std::cout << left << ", " << right << std::endl;
 				
 				if ( left <= right + .02 && left >= right - .02 &&
-					 left < 4.9 ) {
+					 left < 1.1  && right < 1.1 ) {
 					 travelling = true;
 					 velocity->magnitude = .5;
 				} else {
 					if ( !travelling ) {
 						velocity->direction -= dtor(7);
 					} else {
-						if ( left < 4.9 ) {
+						if ( left < 4.9 && right < 4.9) {
 							if ( left > right ) {
 								velocity->direction += dtor( 7 );
 							} else {
 								velocity->direction -= dtor( 7 );
 							}
 						} else {
+							double distance = (Point){0.0, 0.0} - (*at);
+							double best = -1.0;
+							int bestIndex = -1;
+							
 							velocity->magnitude = 0;
-							std::cout << "Intersection!" << std::endl;
+							
+							for ( int i = 0; i < 8; i++ ) {
+								if ( probs[i] == .5 ) {
+									double a, b, closest;
+									
+									switch (i) {
+										case 0:
+											a = intersections[0] - initials[0];
+											b = intersections[1] - initials[0];
+											
+											break;
+										case 7:
+											a = intersections[0] - initials[7];
+											b = intersections[1] - initials[7];
+											
+											break;
+										case 1:
+											a = intersections[2] - initials[1];
+											b = intersections[3] - initials[1];
+											
+											break;
+										case 2:
+											a = intersections[2] - initials[2];
+											b = intersections[3] - initials[2];
+											
+											break;
+									}
+									
+									closest = fabs(a - distance);
+									closest = (closest < fabs(b - distance)) ? closest : fabs(b - distance);
+									
+									if ( bestIndex == -1 || closest < best ) {
+										bestIndex = i;
+										best = closest;
+									}
+								}
+							}
+							
+							// Uncomment when planning is ready.
+							// robot->UpdatePath( PlanPath( initials[ bestIndex ], goals ) );
+							std::cout << "Localization done! Origin is at: (" << initials[bestIndex].x << ", " << initials[bestIndex].y << ")" << std::endl;
+							localizing = false;
 						}
 					}
 				}
