@@ -57,6 +57,8 @@ Path PlanPath( Point src, Path dests, Point offset ) {
 		
 	}
 	
+	path.erase(path.begin());
+	
 	std::cout << "Path";
 
 	for (int i = 0; i < path.size(); i++) {

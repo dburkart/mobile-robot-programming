@@ -6,6 +6,8 @@
 
 using namespace PlayerCc;
 
+#define PI				3.14159
+
 /**
  * The point structure is used to hold an (x, y) tuple, and provides a
  * few useful operations.
@@ -98,11 +100,21 @@ struct Point {
 	//
 	// Calculates the distance from this point to point p;
 	//
-	double distanceTo(Point p) {
+	double distanceTo( Point p ) {
 
 		return (double) sqrt(	(p.x - x) * (p.x - x) +
 					(p.y - y) * (p.y - y) );
 
+	}
+	
+	void convertToLocal( Point ref, double theta ) {
+		double xp, yp;
+		
+		xp = cos(theta) * (x - ref.x) - sin(theta) * (y - ref.y);// + ref.x;
+		yp = sin(theta) * (x - ref.x) - cos(theta) * (y - ref.y);// + ref.y;
+		
+		x = xp;
+		y = yp;
 	}
 };
 

@@ -7,6 +7,7 @@ Robot::Robot( PlayerClient *c, Path p, bool laser ) :
 {
     position = (Point){ 0.0, 0.0 };
     velocity = (Vector){ 0.0, 0.0 };
+    yawOffset = 0.0;
     currentGoal = path.begin();
 
     if ( laser ) {
@@ -44,6 +45,7 @@ int Robot::Run() {
         UpdateRangeData();
 
         //std::cout << "Position: (" << pp.GetXPos() << ", " << pp.GetYPos() << ")\n" << std::endl;
+        
         Point p = position 	= (Point){ pp.GetXPos(), pp.GetYPos() };
         Vector v = velocity = (Vector){ pp.GetYaw(), velocity.magnitude };
 
@@ -57,7 +59,7 @@ int Robot::Run() {
         // Save our magnitude (no GPS!)
         velocity.magnitude = v.magnitude;
 
-        if ( currentGoal == path.end() && currentGoal->x != 0 && currentGoal->y != 0 ) { std::cout << "here!"; break; }
+        if ( currentGoal == path.end() ) { std::cout << "here!"; break; }
 
         client->Read();
     }
@@ -102,6 +104,15 @@ void Robot::UpdateRangeData() {
 
 void Robot::UpdatePath( Path p ) {
 	path = p;
+	std::cout << std::endl << "Updating path: ";
+	
+	for (int i = 0; i < path.size(); i++) {
+	
+		std::cout << " => (" << path[i].x << ", " << path[i].y << ")";
+				
+	}
+	
+	std::cout << std::endl;
 }
 
 RangeData *Robot::GetRangeData() {
@@ -130,4 +141,9 @@ int Robot::GetSampleSize() {
 
 bool Robot::Ranger() {
     return ranger;
+}
+
+void Robot::SetInternals( Point origin, double yaw ) {
+	globalOrigin = origin;
+	yawOffset = yaw;
 }

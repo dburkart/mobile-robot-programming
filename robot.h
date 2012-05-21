@@ -47,11 +47,17 @@ public:
 	int GetSampleSize();
 	
 	bool Ranger();
+	
+	void SetInternals( Point, double );
+	
+	Point ToLocal( Point p );
 
 protected:
 	
 	Point 		position;
 	Vector		velocity;
+	Point 		globalOrigin;
+	double		yawOffset;
 	Path		path;
 	RangeData	rdata;
 	int			bunchSize;

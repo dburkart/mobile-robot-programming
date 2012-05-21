@@ -23,8 +23,6 @@
 #define MIN_TURNRATE	0.1
 #define MAX_XSPEED		0.4
 
-#define PI				3.14159
-
 using namespace PlayerCc;
 
 bool turning = false;
@@ -47,38 +45,40 @@ int goToPoint(Robot *robot, Point *at, Vector *velocity) {
 	
 	// Calculate our delta theta
 	dtheta = theta - velocity->direction;
-    if ( dtheta > 3.14159 ) dtheta -= 2*3.14159;                                          
-    if ( dtheta < -3.14159 ) dtheta += 2*3.14159;
+    if ( dtheta > PI ) dtheta -= 2*PI;                                          
+    if ( dtheta < -PI ) dtheta += 2*PI;
     	
 	// Calculate our acceleration
 	accel = k_1*((*at) - dest) + k_2*(0.0 - velocity->magnitude);
 	
 	if (fabs(dtheta) <= MIN_TURNRATE) turning = false; 
 	
-	//std::cout << "distance: " << (*at) - dest << std::endl;
-	//std::cout << "magnitude: " << velocity->magnitude << std::endl;
-	//std::cout << "acceleration: " << accel << std::endl;
+	if ( !localizing ) {
+		std::cout << "distance: " << (*at) - dest << std::endl;
+		std::cout << "magnitude: " << velocity->magnitude << std::endl;
+		std::cout << "acceleration: " << accel << std::endl;
+
+		if ( adjusting && fabs(dtheta) > MIN_TURNRATE ) {
+			velocity->direction = theta;
+			velocity->magnitude = 0.0;
+		}
 	
-	if ( !localizing && adjusting && fabs(dtheta) > MIN_TURNRATE ) {
-		velocity->direction = theta;
-		velocity->magnitude = 0.0;
-	}
+		// If we haven't started moving yet, OR we have and are still far enough
+		// away, and we haven't overshot.
+		else if ( !velocity->magnitude || velocity->magnitude == MAX_XSPEED || ((*at) - dest > .05 && accel <= 0.0) ) {
+			velocity->direction = (turning) ? theta : robot->GetVelocity()->direction;
+			velocity->magnitude = ( MAX_XSPEED < velocity->magnitude + accel) ? 
+				MAX_XSPEED : velocity->magnitude + accel;
+			adjusting = false;
+		} 
 	
-	// If we haven't started moving yet, OR we have and are still far enough
-	// away, and we haven't overshot.
-	else if ( !localizing && (!velocity->magnitude || velocity->magnitude == MAX_XSPEED || ((*at) - dest > .05 && accel <= 0.0)) ) {
-		velocity->direction = (turning) ? theta : robot->GetVelocity()->direction;
-		velocity->magnitude = ( MAX_XSPEED < velocity->magnitude + accel) ? 
-			MAX_XSPEED : velocity->magnitude + accel;
-		adjusting = false;
-	} 
-	
-	// We've gotten to the point, so stop the robot, get the next point, and
-	// reset 'turning'
-	else if ( !localizing ) {
-		velocity->direction = robot->GetVelocity()->direction;
-		robot->GoalAchieved();
-		adjusting = true;
+		// We've gotten to the point, so stop the robot, get the next point, and
+		// reset 'turning'
+		else {
+			velocity->direction = robot->GetVelocity()->direction;
+			robot->GoalAchieved();
+			adjusting = true;
+		}
 	}
 }
 
@@ -109,7 +109,7 @@ int obstacleAvoidance(Robot *robot, Point *at, Vector *velocity) {
 	//std::cout << "rForce: ";
 	//rForce.print();
 	
-	rForce.direction -= (.5 * 3.14159);
+	rForce.direction -= (.5 * PI);
 	rForce.direction += robot->GetVelocity()->direction;
 	
 	force = (-rForce) + *robot->GetVelocity();
@@ -175,7 +175,8 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 		
 		if ( ind != -1 ) {
 			if ( probs[0] == 0.0 && probs[1] == 0.0 ) {
-				robot->UpdatePath( PlanPath( ((*at) + initials[ ind + 1 ]), goals, initials[ ind + 1 ] ) );
+				//robot->UpdatePath( PlanPath( ((*at) + initials[ ind + 1 ]), goals, initials[ ind + 1 ] ) );
+				localizing = false;
 			} else {
 				double left, right;
 				
@@ -201,6 +202,7 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 						} else {
 							double distance = (Point){0.0, 0.0} - (*at);
 							double best = -1.0;
+							double yaw;
 							int bestIndex = -1;
 							
 							velocity->magnitude = 0;
@@ -213,21 +215,25 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 										case 0:
 											a = intersections[0] - initials[0];
 											b = intersections[1] - initials[0];
+											yaw = PI/2;
 											
 											break;
 										case 7:
 											a = intersections[0] - initials[7];
 											b = intersections[1] - initials[7];
+											yaw = PI/2;
 											
 											break;
 										case 1:
 											a = intersections[2] - initials[1];
 											b = intersections[3] - initials[1];
+											yaw = PI;
 											
 											break;
 										case 2:
 											a = intersections[2] - initials[2];
 											b = intersections[3] - initials[2];
+											yaw = 0.0;
 											
 											break;
 									}
@@ -242,13 +248,12 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 								}
 							}
 							
-							robot->UpdatePath( PlanPath( (*at) + initials[ bestIndex ], goals, initials[ bestIndex ] ) );
-							//std::cout << "Localization done! Origin is at: (" << initials[bestIndex].x << ", " << initials[bestIndex].y << ")" << std::endl;
+							robot->SetInternals( initials[bestIndex], yaw );
+							//robot->UpdatePath( PlanPath( (*at) + initials[ bestIndex ], goals, initials[ bestIndex ] ) );
 							localizing = false;
 						}
 					}
 				}
-				// drive in one direction, use nearest intersection to localize
 			}
 		}
 		// Turn around 360 degrees
@@ -292,6 +297,17 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 					probs[ 1 ] = probs[ 2 ] = .5;
 					break;
 				default:
+					
+					switch (ind) {
+						case 4:
+						case 6:
+							robot->SetInternals( initials[6], -.5*PI );
+							break;
+						case 7:
+							robot->SetInternals( initials[7], PI/2 );
+							break;
+					}
+					
 					probs[ ind + 1 ] = 1.0;
 					break;
 			}
