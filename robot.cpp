@@ -147,3 +147,7 @@ void Robot::SetInternals( Point origin, double yaw ) {
 	globalOrigin = origin;
 	yawOffset = yaw;
 }
+
+Point Robot::ToLocal( Point p ) {
+	return p.convertToLocal( globalOrigin, yawOffset );
+}

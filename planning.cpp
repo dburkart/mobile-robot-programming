@@ -27,7 +27,7 @@ std::vector<Node*> closedList;
 // plan to multiple goals
 // calls 'planToGoal' for each of the goal specified here
 //
-Path PlanPath( Point src, Path dests, Point offset ) {
+Path PlanPath( Point src, Path dests, Robot *robot ) {
 
 /*	
 	011111111111110
@@ -53,7 +53,7 @@ Path PlanPath( Point src, Path dests, Point offset ) {
 		// the global variable 'path')
 		openList.clear();
 		closedList.clear();
-		planToGoal(path.back(), dests[i], offset);
+		planToGoal(path.back(), dests[i]);
 		
 	}
 	
@@ -63,8 +63,7 @@ Path PlanPath( Point src, Path dests, Point offset ) {
 
 	for (int i = 0; i < path.size(); i++) {
 		
-		path[i].x -= offset.x;
-		path[i].y -= offset.y;
+		path[i] = robot->ToLocal( path[i] );
 		std::cout << " => (" << path[i].x << ", " << path[i].y << ")";
 				
 	}
@@ -77,7 +76,7 @@ Path PlanPath( Point src, Path dests, Point offset ) {
 //
 // plan to a single goal
 //
-Path planToGoal(Point src, Point dest, Point offset) {
+Path planToGoal(Point src, Point dest) {
 	
 	int startIndex_h;
 	int startIndex_w;

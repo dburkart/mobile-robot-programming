@@ -107,7 +107,7 @@ struct Point {
 
 	}
 	
-	void convertToLocal( Point ref, double theta ) {
+	Point convertToLocal( Point ref, double theta ) {
 		double xp, yp;
 		
 		xp = cos(theta) * (x - ref.x) - sin(theta) * (y - ref.y);// + ref.x;
@@ -115,6 +115,8 @@ struct Point {
 		
 		x = xp;
 		y = yp;
+		
+		return (*this);
 	}
 };
 

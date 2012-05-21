@@ -2,6 +2,7 @@
 #define __PLANNING_H__
 
 #include "physics.h"
+#include "robot.h"
 
 struct Node {
 	
@@ -52,12 +53,12 @@ struct Node {
 // plan to multiple goals
 // calls 'planToGoal' for each of the goal specified here
 //
-Path PlanPath( Point src, Path dests, Point offset );
+Path PlanPath( Point src, Path dests, Robot* robot );
 
 //
 // plan to a single goal
 //
-Path planToGoal(Point src, Point dest, Point offset);
+Path planToGoal(Point src, Point dest);
 
 //
 // Find the the point in our custom map that is closest 

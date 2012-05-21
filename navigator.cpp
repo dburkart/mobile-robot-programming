@@ -175,7 +175,7 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 		
 		if ( ind != -1 ) {
 			if ( probs[0] == 0.0 && probs[1] == 0.0 ) {
-				//robot->UpdatePath( PlanPath( ((*at) + initials[ ind + 1 ]), goals, initials[ ind + 1 ] ) );
+				robot->UpdatePath( PlanPath( robot->ToLocal( *at ), goals, robot ) );
 				localizing = false;
 			} else {
 				double left, right;
@@ -249,7 +249,7 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 							}
 							
 							robot->SetInternals( initials[bestIndex], yaw );
-							//robot->UpdatePath( PlanPath( (*at) + initials[ bestIndex ], goals, initials[ bestIndex ] ) );
+							robot->UpdatePath( PlanPath( robot->ToLocal( *at ), goals, robot ) );
 							localizing = false;
 						}
 					}
