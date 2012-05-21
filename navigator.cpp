@@ -174,84 +174,79 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 		RangeData *d = robot->GetRangeData();
 		
 		if ( ind != -1 ) {
-			if ( probs[0] == 0.0 && probs[1] == 0.0 ) {
-				robot->UpdatePath( PlanPath( robot->ToLocal( *at ), goals, robot ) );
-				localizing = false;
+			double left, right;
+			
+			left = robot->GetRangeSample( 1 );
+			right = robot->GetRangeSample( 8 );
+			
+			std::cout << left << ", " << right << std::endl;
+			
+			if ( left <= right + .02 && left >= right - .02 &&
+				 left < 1.1  && right < 1.1 ) {
+				 travelling = true;
+				 velocity->magnitude = .5;
 			} else {
-				double left, right;
-				
-				left = robot->GetRangeSample( 1 );
-				right = robot->GetRangeSample( 8 );
-				
-				std::cout << left << ", " << right << std::endl;
-				
-				if ( left <= right + .02 && left >= right - .02 &&
-					 left < 1.1  && right < 1.1 ) {
-					 travelling = true;
-					 velocity->magnitude = .5;
+				if ( !travelling ) {
+					velocity->direction -= dtor(7);
 				} else {
-					if ( !travelling ) {
-						velocity->direction -= dtor(7);
-					} else {
-						if ( left < 4.9 && right < 4.9) {
-							if ( left > right ) {
-								velocity->direction += dtor( 7 );
-							} else {
-								velocity->direction -= dtor( 7 );
-							}
+					if ( left < 4.9 && right < 4.9) {
+						if ( left > right ) {
+							velocity->direction += dtor( 7 );
 						} else {
-							double distance = (Point){0.0, 0.0} - (*at);
-							double best = -1.0;
-							double yaw;
-							int bestIndex = -1;
-							
-							velocity->magnitude = 0;
-							
-							for ( int i = 0; i < 8; i++ ) {
-								if ( probs[i] == .5 ) {
-									double a, b, closest;
-									
-									switch (i) {
-										case 0:
-											a = intersections[0] - initials[0];
-											b = intersections[1] - initials[0];
-											yaw = PI/2;
-											
-											break;
-										case 7:
-											a = intersections[0] - initials[7];
-											b = intersections[1] - initials[7];
-											yaw = PI/2;
-											
-											break;
-										case 1:
-											a = intersections[2] - initials[1];
-											b = intersections[3] - initials[1];
-											yaw = PI;
-											
-											break;
-										case 2:
-											a = intersections[2] - initials[2];
-											b = intersections[3] - initials[2];
-											yaw = 0.0;
-											
-											break;
-									}
-									
-									closest = fabs(a - distance);
-									closest = (closest < fabs(b - distance)) ? closest : fabs(b - distance);
-									
-									if ( bestIndex == -1 || closest < best ) {
-										bestIndex = i;
-										best = closest;
-									}
+							velocity->direction -= dtor( 7 );
+						}
+					} else {
+						double distance = (Point){0.0, 0.0} - (*at);
+						double best = -1.0;
+						double yaw;
+						int bestIndex = -1;
+						
+						velocity->magnitude = 0;
+						
+						for ( int i = 0; i < 8; i++ ) {
+							if ( probs[i] == .5 ) {
+								double a, b, closest;
+								
+								switch (i) {
+									case 0:
+										a = intersections[0] - initials[0];
+										b = intersections[1] - initials[0];
+										yaw = PI/2;
+										
+										break;
+									case 7:
+										a = intersections[0] - initials[7];
+										b = intersections[1] - initials[7];
+										yaw = PI/2;
+										
+										break;
+									case 1:
+										a = intersections[2] - initials[1];
+										b = intersections[3] - initials[1];
+										yaw = PI;
+										
+										break;
+									case 2:
+										a = intersections[2] - initials[2];
+										b = intersections[3] - initials[2];
+										yaw = 0.0;
+										
+										break;
+								}
+								
+								closest = fabs(a - distance);
+								closest = (closest < fabs(b - distance)) ? closest : fabs(b - distance);
+								
+								if ( bestIndex == -1 || closest < best ) {
+									bestIndex = i;
+									best = closest;
 								}
 							}
-							
-							robot->SetInternals( initials[bestIndex], yaw );
-							robot->UpdatePath( PlanPath( robot->ToLocal( *at ), goals, robot ) );
-							localizing = false;
 						}
+						
+						robot->SetInternals( initials[bestIndex], yaw );
+						robot->UpdatePath( PlanPath( robot->ToLocal( *at ), goals, robot ) );
+						localizing = false;
 					}
 				}
 			}
@@ -297,18 +292,26 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 					probs[ 1 ] = probs[ 2 ] = .5;
 					break;
 				default:
+				
+					double yaw;
 					
 					switch (ind) {
-						case 4:
-						case 6:
-							robot->SetInternals( initials[6], -.5*PI );
+						case 2:
+							yaw = 0.0;
 							break;
-						case 7:
-							robot->SetInternals( initials[7], PI/2 );
+						case 3:
+						case 4:
+							yaw = -.5 * PI;
+							break;
+						case 5:
+							yaw = PI / 2;
 							break;
 					}
 					
-					probs[ ind + 1 ] = 1.0;
+					robot->SetInternals( initials[ind + 1], yaw );
+					robot->UpdatePath( PlanPath( robot->ToLocal( *at ), goals, robot ) );
+					localizing = false;
+					
 					break;
 			}
 		}
