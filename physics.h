@@ -107,14 +107,23 @@ struct Point {
 
 	}
 	
-	Point convertToLocal( Point ref, double theta ) {
+	Point rotate( Point ref, double theta ) {
 		double xp, yp;
 		
-		xp = cos(theta) * (x - ref.x) - sin(theta) * (y - ref.y);// + ref.x;
-		yp = sin(theta) * (x - ref.x) - cos(theta) * (y - ref.y);// + ref.y;
+		xp = cos(theta) * (x - ref.x) - sin(theta) * (y - ref.y) + ref.x;
+		yp = sin(theta) * (x - ref.x) - cos(theta) * (y - ref.y) + ref.y;
 		
 		x = xp;
 		y = yp;
+		
+		return (*this);
+	}
+	
+	Point convertToLocal( Point ref, double theta ) {
+		rotate( ref, theta );
+		
+		x -= ref.x;
+		y -= ref.y;
 		
 		return (*this);
 	}

@@ -54,6 +54,8 @@ int goToPoint(Robot *robot, Point *at, Vector *velocity) {
 	if (fabs(dtheta) <= MIN_TURNRATE) turning = false; 
 	
 	if ( !localizing ) {
+		std::cout << "at: (" << at->x << ", " << at->y << ") " << std::endl;
+		std::cout << "dest: (" << dest.x << ", " << dest.y << ") " << std::endl;
 		std::cout << "distance: " << (*at) - dest << std::endl;
 		std::cout << "magnitude: " << velocity->magnitude << std::endl;
 		std::cout << "acceleration: " << accel << std::endl;
@@ -170,7 +172,8 @@ Point intersections[8] = {
 int localize( Robot *robot, Point *at, Vector *velocity ) {
 	Point goal = robot->GetGoal();
 	
-	if ( goal.x == 0 && goal.y == 0 ) {
+	if ( localizing ) {
+		std::cout << "In localize!" << std::endl;
 		RangeData *d = robot->GetRangeData();
 		
 		if ( ind != -1 ) {
@@ -198,7 +201,7 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 					} else {
 						double distance = (Point){0.0, 0.0} - (*at);
 						double best = -1.0;
-						double yaw;
+						double yaw, bestYaw;
 						int bestIndex = -1;
 						
 						velocity->magnitude = 0;
@@ -240,12 +243,24 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 								if ( bestIndex == -1 || closest < best ) {
 									bestIndex = i;
 									best = closest;
+									bestYaw = yaw;
 								}
 							}
 						}
 						
-						robot->SetInternals( initials[bestIndex], yaw );
-						robot->UpdatePath( PlanPath( robot->ToLocal( *at ), goals, robot ) );
+						robot->SetInternals( initials[bestIndex], bestYaw );
+						//Point p = (Point){ at->x - initials[ind + 1].x, at->y - initials[ind + 1].y };
+						
+						std::cout << "bestIndex: " << bestIndex << ", bestYaw: " << bestYaw << std::endl;
+						Point p = *at;
+						std::cout << "local p: (" << p.x << ", " << p.y << "), ";
+						p.rotate( (Point){0.0, 0.0}, bestYaw );
+						std::cout << "after rotate: (" << p.x << ", " << p.y << "), ";
+						//p = (Point){p.x - initials[bestIndex].x, p.y - initials[bestIndex].y};
+						p = p + initials[bestIndex];
+						std::cout << "after translate: (" << p.x << ", " << p.y << ")" << std::endl;
+						
+						robot->UpdatePath( PlanPath( p, goals, robot ) );
 						localizing = false;
 					}
 				}
@@ -309,10 +324,14 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 					}
 					
 					robot->SetInternals( initials[ind + 1], yaw );
-					robot->UpdatePath( PlanPath( robot->ToLocal( *at ), goals, robot ) );
-					localizing = false;
 					
-					break;
+					Point p;
+					
+					p.rotate( (Point){0.0, 0.0}, yaw );
+					p = p + initials[ind + 1];
+					 
+					robot->UpdatePath( PlanPath( p, goals, robot ) );
+					localizing = false;
 			}
 		}
 		
@@ -380,6 +399,14 @@ int main( int argc, char *argv[] ) {
 	robot.AddBehavior( &obstacleAvoidance );
 	robot.AddBehavior( &convertToTurnrate );
 	robot.AddBehavior( &localize );
+	
+	Point ref = (Point){3, -5}, lP = (Point){-3, -5};
+	double theta = PI/2;
+	
+	lP.rotate( (Point){0.0, 0.0}, theta );
+	lP = (Point){ lP.x - ref.x, lP.y - ref.y };
+	
+	std::cout << "Translated point: (" << lP.x << ", " << lP.y << ") " << std::endl;
 	
 	robot.Run();
 	

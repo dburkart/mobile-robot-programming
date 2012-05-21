@@ -44,7 +44,9 @@ Path PlanPath( Point src, Path dests, Robot *robot ) {
 	00111111111110110
 	00000000000000000
 */
-
+	
+	std::cout << "In PlanPath() with src=("<<src.x<<","<<src.y<<")" <<std::endl;
+	
 	path.push_back(src);
 
 	for (int i = 0; i < dests.size(); i++) {
@@ -57,7 +59,7 @@ Path PlanPath( Point src, Path dests, Robot *robot ) {
 		
 	}
 	
-	path.erase(path.begin());
+	//path.erase(path.begin());
 	
 	std::cout << "Path";
 
