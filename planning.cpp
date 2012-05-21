@@ -59,7 +59,7 @@ Path PlanPath( Point src, Path dests, Robot *robot ) {
 		
 	}
 	
-	//path.erase(path.begin());
+	path.erase(path.begin());
 	
 	std::cout << "Path";
 

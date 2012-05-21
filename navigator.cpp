@@ -314,12 +314,12 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 						case 2:
 							yaw = 0.0;
 							break;
-						case 3:
 						case 4:
-							yaw = -.5 * PI;
+							yaw = PI/2;
 							break;
+						case 3:
 						case 5:
-							yaw = PI / 2;
+							yaw = (-PI)/2;
 							break;
 					}
 					
