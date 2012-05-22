@@ -176,10 +176,12 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 		RangeData *d = robot->GetRangeData();
 		
 		if ( ind != -1 ) {
-			double left, right;
+			double left, right, adjLeft, adjRight;
 			
 			left = robot->GetRangeSample( 1 );
 			right = robot->GetRangeSample( 8 );
+			adjLeft = ( robot->GetRangeSample( 1 ) + robot->GetRangeSample( 2 ) ) / 2;
+			adjRight = ( robot->GetRangeSample( 8 ) + robot->GetRangeSample( 7 ) ) / 2;
 			
 			std::cout << left << ", " << right << std::endl;
 			
@@ -195,10 +197,10 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 					velocity->direction -= dtor(7);
 				} else {
 					if ( left < 4.9 && right < 4.9) {
-						if ( left > right ) {
-							velocity->direction += dtor( 7 );
+						if ( adjLeft > adjRight ) {
+							velocity->direction += dtor( 3 );
 						} else {
-							velocity->direction -= dtor( 7 );
+							velocity->direction -= dtor( 3 );
 						}
 					} else {
 						double distance = (Point){0.0, 0.0} - (*at);
