@@ -153,9 +153,11 @@ Point Robot::ToLocal( Point p ) {
 	std::cout << "Converting (" << p.x << ", " << p.y << ") to (";
 	//p.convertToLocal( globalOrigin, yawOffset );
 	p = (Point){p.x - globalOrigin.x, p.y - globalOrigin.y};
-	p.rotate( (Point){0.0, 0.0}, -1.0 * yawOffset );
 	
-	std::cout << p.x << ", " << p.y << ")" << std::endl;
+	if ( yawOffset != 0.0 )
+		p.rotate( (Point){0.0, 0.0}, -1.0 * yawOffset );
+	
+	std::cout << p.x << ", " << p.y << ") offset: " << yawOffset << std::endl;
 
 	return p;
 }

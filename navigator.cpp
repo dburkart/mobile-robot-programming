@@ -1,9 +1,8 @@
 /**
  * file: safegoto.cpp
  * 
- * Description: Read in a set of points, and try go to each one while 
- * 		avoiding obstacles. Because of the restrictions on submitting
- * 		multiple source files, this file is choc-full of data structures.
+ * Description: Read in a set of points, localize, plan the path using
+ *   the roadmap, and visit each of the points.
  * 
  * Author: Hashem Assayari (hya4542), Dana Burkart (dsb3573)
  */
@@ -67,7 +66,7 @@ int goToPoint(Robot *robot, Point *at, Vector *velocity) {
 	
 		// If we haven't started moving yet, OR we have and are still far enough
 		// away, and we haven't overshot.
-		else if ( !velocity->magnitude || velocity->magnitude == MAX_XSPEED || ((*at) - dest > .05 && accel <= 0.0) ) {
+		else if ( !velocity->magnitude || velocity->magnitude == MAX_XSPEED || ((*at) - dest > .1 && accel <= 0.0) ) {
 			velocity->direction = (turning) ? theta : robot->GetVelocity()->direction;
 			velocity->magnitude = ( MAX_XSPEED < velocity->magnitude + accel) ? 
 				MAX_XSPEED : velocity->magnitude + accel;
@@ -254,6 +253,7 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 						robot->SetInternals( initials[bestIndex], bestYaw );
 						//Point p = (Point){ at->x - initials[ind + 1].x, at->y - initials[ind + 1].y };
 						
+						std::cout << std::endl << "============= Localization =============" << std::endl;
 						std::cout << "bestIndex: " << bestIndex << ", bestYaw: " << bestYaw << std::endl;
 						Point p = *at;
 						std::cout << "local p: (" << p.x << ", " << p.y << "), ";
@@ -293,7 +293,7 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 			
 			sd = sqrt( (a / 360) - ((b / 360) * (b / 360)) );
 			
-			//std::cout << "standard deviation: " << sd << std::endl;
+			std::cout << "standard deviation: " << sd << std::endl;
 			
 			for (int i = 0; i < 6; i++) {
 				if ( sd >= bounds[i].x && sd <= bounds[i].y ) {
