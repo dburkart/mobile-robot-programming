@@ -184,12 +184,15 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 			
 			std::cout << left << ", " << right << std::endl;
 			
-			if ( left <= right + .02 && left >= right - .02 &&
-				 left < 1.1  && right < 1.1 ) {
-				 travelling = true;
-				 velocity->magnitude = .5;
+			if ( travelling || (left <= right + .02 && left >= right - .02) ) {
+				
+				travelling = true;
+			 	velocity->magnitude = .5;
+				
+				if ( left >= 4.9 || right >= 4.9 ) travelling = false;
+			 	
 			} else {
-				if ( !travelling ) {
+				if ( !travelling && ( left < 4.9 && right < 4.9 ) ) {
 					velocity->direction -= dtor(7);
 				} else {
 					if ( left < 4.9 && right < 4.9) {
