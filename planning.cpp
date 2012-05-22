@@ -1,3 +1,22 @@
+/**
+ * file: planning.cpp
+ * 
+ * Description: This class uses the preconstructed map array below
+ * 		to perform an A* search for the shortest path from point A
+ * 		to point B. Other classes are expected to call planPath
+ * 		which plans a path through any number of goals. The algorithm
+ * 		expects the starting point and the goal(s) point(s) to be passed
+ * 		in in global coordinate system.
+ * 		
+ * Developer's notes:
+ * 		The algorithm can be improved to plan the most effecient path
+ * 		when planning through multiple goal by modifiying the order
+ * 		of the goals so that the robot goes through all the goal by
+ * 		travelling the shortest distance possible.
+ * 
+ * Author(s): Hashem Assayari (hya4542), Dana Burkart (dsb3573)
+ */
+
 #include "planning.h"
 
 #define HEIGHT 	4
@@ -10,10 +29,10 @@ int map[HEIGHT][WIDTH] = 	{	{0,1,1,1,1,1,1,1,1,1,1,1,0},
 									};
 
 Point mapPoints[HEIGHT][WIDTH] = 	{ {(Point){0.0,0.0}			,	(Point){-56.24, 13.1}	, (Point){-51.10, 13.10}, (Point){-47.68, 13.1}	, (Point){-19.59, 13.1}	, (Point){8.50, 13.10}, (Point){15.0, 13.1}		, (Point){20.91, 13.1},	(Point){23.50, 13.1}	,	(Point){28.60, 13.1}	,	(Point){34.80, 13.1}, (Point){40.80, 13.1}	,	(Point){0.0,0.0}			},
-														{(Point){-58.75, 7.80}, (Point){-56.24, 7.80}	,	(Point){0.0,0.0}			, (Point){-47.68, 5.46}	,	(Point){0.0,0.0}			, (Point){8.50, 5.46}	,	(Point){0.0,0.0}			, (Point){20.91, 8.25},	(Point){0.0,0.0}			, (Point){28.60, 5.46}	,	(Point){0.0,0.0}		,	(Point){40.80, 5.46}	,	(Point){0.0,0.0}			},
-														{(Point){0.0,0.0}			,	(Point){0.0,0.0}			,	(Point){0.0,0.0}			,	(Point){-47.68, -2.16},	(Point){0.0,0.0}			,	(Point){8.50, -2.16},	(Point){0.0,0.0}			,	(Point){0.0,0.0}		,	(Point){0.0,0.0}			,	(Point){28.60, -2.16}	,	(Point){0.0,0.0}		,	(Point){40.80, -2.16}	,	(Point){0.0,0.0}			},
-														{(Point){0.0,0.0}			,	(Point){-55.15, -9.8}	,	(Point){-51.10, -9.8}	,	(Point){-47.68, -9.8}	,	(Point){-19.59, -9.8}	,	(Point){8.50, -9.8}	,	(Point){13.525, -9.8}	,	(Point){18.55, -9.8},	(Point){23.575, -9.8}	, (Point){28.60, -9.8}	,	(Point){0.0,0.0}		,	(Point){40.80, -9.8}	,	(Point){45.50, -9.8}	}
-													};
+																		{(Point){-58.75, 7.80}, (Point){-56.24, 7.80}	,	(Point){0.0,0.0}			, (Point){-47.68, 5.46}	,	(Point){0.0,0.0}			, (Point){8.50, 5.46}	,	(Point){0.0,0.0}			, (Point){20.91, 8.25},	(Point){0.0,0.0}			, (Point){28.60, 5.46}	,	(Point){0.0,0.0}		,	(Point){40.80, 5.46}	,	(Point){0.0,0.0}			},
+																		{(Point){0.0,0.0}			,	(Point){0.0,0.0}			,	(Point){0.0,0.0}			,	(Point){-47.68, -2.16},	(Point){0.0,0.0}			,	(Point){8.50, -2.16},	(Point){0.0,0.0}			,	(Point){0.0,0.0}		,	(Point){0.0,0.0}			,	(Point){28.60, -2.16}	,	(Point){0.0,0.0}		,	(Point){40.80, -2.16}	,	(Point){0.0,0.0}			},
+																		{(Point){0.0,0.0}			,	(Point){-55.15, -9.8}	,	(Point){-51.10, -9.8}	,	(Point){-47.68, -9.8}	,	(Point){-19.59, -9.8}	,	(Point){8.50, -9.8}	,	(Point){13.525, -9.8}	,	(Point){18.55, -9.8},	(Point){23.575, -9.8}	, (Point){28.60, -9.8}	,	(Point){0.0,0.0}		,	(Point){40.80, -9.8}	,	(Point){45.50, -9.8}	}
+																	};
 
 
 // Globals and data structures
@@ -25,7 +44,11 @@ std::vector<Node*> closedList;
 
 //
 // plan to multiple goals
-// calls 'planToGoal' for each of the goal specified here
+// calls 'planToGoal' for each of the goal specified here.
+// src point and dests points are expected to be in GLOBAL
+// 	coordinate system.
+// returns a Path object containing the path from the 'src'
+// 	to each of the points in 'dests' in LOCAL coordinate system.
 //
 Path PlanPath( Point src, Path dests, Robot *robot ) {
 
@@ -47,22 +70,30 @@ Path PlanPath( Point src, Path dests, Robot *robot ) {
 	
 	std::cout << "In PlanPath() with src=("<<src.x<<","<<src.y<<")" <<std::endl;
 	
-	path.push_back(src);
+	path.push_back(src);		// this line is ciritcal
 
 	for (int i = 0; i < dests.size(); i++) {
 		
 		// the following call modifies state (adds waypoints to
 		// the global variable 'path')
+		cleanup();
 		openList.clear();
 		closedList.clear();
 		planToGoal(path.back(), dests[i]);
 		
 	}
 	
+	// garbage collection
+	cleanup();
+	openList.clear();
+	closedList.clear();
+	
 	path.erase(path.begin());
 	
 	std::cout << "Path";
 
+	// converting all the points to local coordinate system
+	// 	before returning the 'path' object back to caller.
 	for (int i = 0; i < path.size(); i++) {
 		
 		path[i] = robot->ToLocal( path[i] );
@@ -77,6 +108,7 @@ Path PlanPath( Point src, Path dests, Robot *robot ) {
 
 //
 // plan to a single goal
+// expects 'src' & 'dests' to be in GLOBAL coordinate system
 //
 Path planToGoal(Point src, Point dest) {
 	
@@ -85,8 +117,8 @@ Path planToGoal(Point src, Point dest) {
 	int goalIndex_h;
 	int goalIndex_w;
 	
-	// TODO: find out the indeces of the start and goal in
-	//				our custom map structure.
+	// 1- find out the indeces of the start and goal in
+	//	our custom map structure.
 	int *indeces = findClosestPoint(src);
 	startIndex_h = indeces[0];
 	startIndex_w = indeces[1];
@@ -96,21 +128,19 @@ Path planToGoal(Point src, Point dest) {
 	
 	std::cout << "0" << std::endl;
 	
-	// start and goal points based on our custom drawn map
+	// 1a- start and goal points based on our custom drawn map
 	start	= mapPoints[startIndex_h][startIndex_w];
 	goal	= mapPoints[goalIndex_h][goalIndex_w];
 	
 	std::cout << "(" << start.x << ", " << start.y << ") => ("
 						<< goal.x << ", " << goal.y << ")" << std::endl;
 
-	// create the first node and calculate hCost for that node
+	// 2- create the first node and calculate hCost for that node
 	double hCost = start.distanceTo(goal);
 	Node* root = new Node(start, 0, 0, hCost, true);
 	
-	// add root to openList
+	// 2a- add root to openList
 	openList.push_back(root);
-	
-	//std::cout << "1" << std::endl;
 	
 	int level = 1;
 	
@@ -377,5 +407,25 @@ std::vector<Node*> constructPath(Node* cameFrom, Node* currentNode) {
 		
 	}
 	
+	
+}
+
+int cleanup() {
+	
+	// 1- clear openList
+	for (int i = 0; i < openList.size(); i++) {
+		
+		delete openList[i];
+		
+	}
+	
+	// 2- clear closedList
+	for (int i = 0; i < closedList.size(); i++) {
+		
+		delete closedList[i];
+		
+	}
+	
+	return 1;
 	
 }

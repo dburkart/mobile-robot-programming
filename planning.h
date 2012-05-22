@@ -100,5 +100,11 @@ bool inClosedList(Point p);
 //
 std::vector<Node*> constructPath(Node* cameFrom, Node* currentNode);
 
+//
+// performs cleanup after the class is done
+//	deallocates all teh memory used
+//
+int cleanup();
+
 #endif
 
