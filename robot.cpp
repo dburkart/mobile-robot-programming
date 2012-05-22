@@ -105,15 +105,6 @@ void Robot::UpdateRangeData() {
 void Robot::UpdatePath( Path p ) {
 	path = p;
 	currentGoal = path.begin();
-	std::cout << std::endl << "Updating path: ";
-	
-	for (int i = 0; i < path.size(); i++) {
-	
-		std::cout << " => (" << path[i].x << ", " << path[i].y << ")";
-				
-	}
-	
-	std::cout << std::endl;
 }
 
 RangeData *Robot::GetRangeData() {
@@ -150,14 +141,12 @@ void Robot::SetInternals( Point origin, double yaw ) {
 }
 
 Point Robot::ToLocal( Point p ) {
-	std::cout << "Converting (" << p.x << ", " << p.y << ") to (";
+
 	//p.convertToLocal( globalOrigin, yawOffset );
 	p = (Point){p.x - globalOrigin.x, p.y - globalOrigin.y};
 	
 	if ( yawOffset != 0.0 )
 		p.rotate( (Point){0.0, 0.0}, -1.0 * yawOffset );
 	
-	std::cout << p.x << ", " << p.y << ") offset: " << yawOffset << std::endl;
-
 	return p;
 }

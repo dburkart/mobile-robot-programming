@@ -22,17 +22,19 @@
 #define HEIGHT 	4
 #define WIDTH 	13
 
+using namespace std;
+
 int map[HEIGHT][WIDTH] = 	{	{0,1,1,1,1,1,1,1,1,1,1,1,0},
 										{1,1,0,1,0,1,0,1,0,1,0,1,0},
 										{0,0,0,1,0,1,0,0,0,1,0,1,0},
 										{0,1,1,1,1,1,1,1,1,1,0,1,1}
 									};
 
-Point mapPoints[HEIGHT][WIDTH] = 	{ {(Point){0.0,0.0}			,	(Point){-56.24, 13.1}	, (Point){-51.10, 13.10}, (Point){-47.68, 13.1}	, (Point){-19.59, 13.1}	, (Point){8.50, 13.10}, (Point){15.0, 13.1}		, (Point){20.91, 13.1},	(Point){23.50, 13.1}	,	(Point){28.60, 13.1}	,	(Point){34.80, 13.1}, (Point){40.80, 13.1}	,	(Point){0.0,0.0}			},
-																		{(Point){-58.75, 7.80}, (Point){-56.24, 7.80}	,	(Point){0.0,0.0}			, (Point){-47.68, 5.46}	,	(Point){0.0,0.0}			, (Point){8.50, 5.46}	,	(Point){0.0,0.0}			, (Point){20.91, 8.25},	(Point){0.0,0.0}			, (Point){28.60, 5.46}	,	(Point){0.0,0.0}		,	(Point){40.80, 5.46}	,	(Point){0.0,0.0}			},
-																		{(Point){0.0,0.0}			,	(Point){0.0,0.0}			,	(Point){0.0,0.0}			,	(Point){-47.68, -2.16},	(Point){0.0,0.0}			,	(Point){8.50, -2.16},	(Point){0.0,0.0}			,	(Point){0.0,0.0}		,	(Point){0.0,0.0}			,	(Point){28.60, -2.16}	,	(Point){0.0,0.0}		,	(Point){40.80, -2.16}	,	(Point){0.0,0.0}			},
-																		{(Point){0.0,0.0}			,	(Point){-55.15, -9.8}	,	(Point){-51.10, -9.8}	,	(Point){-47.68, -9.8}	,	(Point){-19.59, -9.8}	,	(Point){8.50, -9.8}	,	(Point){13.525, -9.8}	,	(Point){18.55, -9.8},	(Point){23.575, -9.8}	, (Point){28.60, -9.8}	,	(Point){0.0,0.0}		,	(Point){40.80, -9.8}	,	(Point){45.50, -9.8}	}
-																	};
+Point mapPoints[HEIGHT][WIDTH] ={	{(Point){0.0,0.0}			,	(Point){-56.24, 13.1}	, 	(Point){-51.10, 13.10}	, (Point){-47.68, 13.1}	, (Point){-19.59, 13.1}	, (Point){8.50, 13.10}, (Point){15.0, 13.1}		, (Point){20.91, 13.1},	(Point){23.50, 13.1}	,	(Point){28.60, 13.1}	,	(Point){34.80, 13.1}, (Point){40.80, 13.1}	,	(Point){0.0,0.0}			},
+									{(Point){-58.75, 7.80}		, 	(Point){-56.24, 7.80}	,	(Point){0.0,0.0}		, (Point){-47.68, 5.46}	,	(Point){0.0,0.0}			, (Point){8.50, 5.46}	,	(Point){0.0,0.0}			, (Point){20.91, 10.0},	(Point){0.0,0.0}			, (Point){28.60, 5.46}	,	(Point){0.0,0.0}		,	(Point){40.80, 5.46}	,	(Point){0.0,0.0}			},
+									{(Point){0.0,0.0}			,	(Point){0.0,0.0}		,	(Point){0.0,0.0}		,	(Point){-47.68, -2.16},	(Point){0.0,0.0}			,	(Point){8.50, -2.16},	(Point){0.0,0.0}			,	(Point){0.0,0.0}		,	(Point){0.0,0.0}			,	(Point){28.60, -2.16}	,	(Point){0.0,0.0}		,	(Point){40.80, -2.16}	,	(Point){0.0,0.0}			},
+									{(Point){0.0,0.0}			,	(Point){-55.15, -9.8}	,	(Point){-51.10, -9.8}	,	(Point){-47.68, -9.8}	,	(Point){-19.59, -9.8}	,	(Point){8.50, -9.8}	,	(Point){13.525, -9.8}	,	(Point){18.55, -9.8},	(Point){23.575, -9.8}	, (Point){28.60, -9.8}	,	(Point){0.0,0.0}		,	(Point){40.80, -9.8}	,	(Point){45.50, -9.8}	}
+								};
 
 
 // Globals and data structures
@@ -68,8 +70,6 @@ Path PlanPath( Point src, Path dests, Robot *robot ) {
 	00000000000000000
 */
 	
-	std::cout << "In PlanPath() with src=("<<src.x<<","<<src.y<<")" <<std::endl;
-	
 	path.push_back(src);		// this line is ciritcal
 
 	for (int i = 0; i < dests.size(); i++) {
@@ -90,19 +90,22 @@ Path PlanPath( Point src, Path dests, Robot *robot ) {
 	
 	path.erase(path.begin());
 	
-	std::cout << "Path";
-
+	cout << "============= Planning =============" << endl;
+	cout << "Path (global): " << endl;
 	// converting all the points to local coordinate system
 	// 	before returning the 'path' object back to caller.
 	for (int i = 0; i < path.size(); i++) {
-		
-		path[i] = robot->ToLocal( path[i] );
-		std::cout << " => (" << path[i].x << ", " << path[i].y << ")";
-				
+		std::cout << " -> (" << path[i].x << ", " << path[i].y << ")";	
 	}
+	cout << endl << endl << "Path (local): " << endl;
+	// converting all the points to local coordinate system
+	// 	before returning the 'path' object back to caller.
+	for (int i = 0; i < path.size(); i++) {
+		path[i] = robot->ToLocal( path[i] );
+		std::cout << " -> (" << path[i].x << ", " << path[i].y << ")";	
+	}
+	cout << endl;
 	
-	std::cout << std::endl;
-
 	return path;
 }
 
@@ -126,15 +129,10 @@ Path planToGoal(Point src, Point dest) {
 	goalIndex_h = indeces[0];
 	goalIndex_w = indeces[1];
 	
-	std::cout << "0" << std::endl;
-	
 	// 1a- start and goal points based on our custom drawn map
 	start	= mapPoints[startIndex_h][startIndex_w];
 	goal	= mapPoints[goalIndex_h][goalIndex_w];
 	
-	std::cout << "(" << start.x << ", " << start.y << ") => ("
-						<< goal.x << ", " << goal.y << ")" << std::endl;
-
 	// 2- create the first node and calculate hCost for that node
 	double hCost = start.distanceTo(goal);
 	Node* root = new Node(start, 0, 0, hCost, true);
@@ -146,8 +144,6 @@ Path planToGoal(Point src, Point dest) {
 	
 	while (openList.size() != 0) {
 		
-		std::cout << "level: " << level << std::endl;
-		
 		Node* current = openList[0];
 		for (int i = 0; i < openList.size(); i++) {
 			
@@ -156,24 +152,12 @@ Path planToGoal(Point src, Point dest) {
 			
 		}
 		
-		std::cout << "Current(" << (*current).point.x << ", " 
-							<< (*current).point.y << ")" << std::endl;
-		
 		
 		// after the previous for-loop, 'current' holds the node in OpenList
 		// with the lowest fCost (hCost + gCost).
 		
 		if ((*current).point == goal) {
-			// TODO: return path
-			std::cout << "openList:{";
-			for (int i = 0; i < openList.size(); i++) {
-				
-				std::cout << "(" << (*openList[i]).point.x << ", " 
-									<< (*openList[i]).point.y << "),";
-				
-			}
-			std::cout << "}" << std::endl;
-			std::cout << "done! openList.size = " << openList.size() << " constructing path..." << std::endl;
+
 			std::vector<Node*> pathOfNodes = constructPath((*current).ancestor, current);
 			if (!((*pathOfNodes.front()).point == src) && !(path.back() == src))
 				path.push_back(src);
@@ -204,8 +188,6 @@ Path planToGoal(Point src, Point dest) {
 		Node* tmpNeighbor;
 		Point neighborPoint;
 		
-		if (level == 16)
-			std::cout << indeces[0] << "," << indeces[1] << std::endl;
 		
 		// try left
 		checkNeighbor(current, indeces, 4); // left
@@ -213,7 +195,7 @@ Path planToGoal(Point src, Point dest) {
 		checkNeighbor(current, indeces, 2); // up
 		checkNeighbor(current, indeces, 8); // down
 		
-		std::cout << "##########################################" << std::endl;
+
 		level++;
 		
 	}
@@ -241,9 +223,7 @@ int* findClosestPoint(Point p) {
 				
 			double tempDist = mapPoints[h][w].distanceTo(p);
 			
-			//std::cout << "distCmp(" << tempDist << " vs. " 
-			//					<< smallestDist << ")" << std::endl;
-			
+
 			if (tempDist < smallestDist) {
 			
 				index_h = h;
@@ -320,8 +300,6 @@ int checkNeighbor(Node* current, int* indeces, int moveTo) {
 		// if the neighbor point isn't a valid move i.e. wall
 		if (!(neighborPoint == (Point){0.0,0.0}) && !(inClosedList(neighborPoint))) {
 			
-			std::cout << label << "(" << neighborPoint.x << ", " 
-								<< neighborPoint.y << ")" << std::endl;
 			double gCost = (*current).gCost + (*current).point.distanceTo(neighborPoint);
 				
 			// add neighbor in openList if it's not there already
@@ -385,14 +363,11 @@ bool inClosedList(Point p) {
 //
 std::vector<Node*> constructPath(Node* cameFrom, Node* currentNode) {
 	
-	//std::cout << "here" << std::endl;
 	
 	if (!(*currentNode).root) {
 		
-			//std::cout << "ancestor(" << (*(*currentNode).ancestor).point.x << ", " << (*(*currentNode).ancestor).point.x << ")" << std::endl;
 			std::vector<Node*> tmpPath = constructPath(cameFrom, (*currentNode).ancestor);
 			tmpPath.push_back(currentNode);
-			//std::cout << " => (" << (*currentNode).point.x << ", " << (*currentNode).point.y << ")";
 			return tmpPath;
 		
 	}
@@ -400,8 +375,6 @@ std::vector<Node*> constructPath(Node* cameFrom, Node* currentNode) {
 		
 		std::vector<Node*> tmpPath;
 		tmpPath.push_back(currentNode);
-		
-		//std::cout << "(" << (*currentNode).point.x << ", " << (*currentNode).point.y << ")";
 		
 		return tmpPath;
 		

@@ -23,10 +23,15 @@
 #define MAX_XSPEED		0.4
 
 using namespace PlayerCc;
+using namespace std;
+
+Path goals;
 
 bool turning = false;
 bool adjusting = true;
 bool localizing = true;
+
+int pauseCount = 0;
 
 double k_1 = 1.0, k_2 = 1.0;
 
@@ -53,11 +58,6 @@ int goToPoint(Robot *robot, Point *at, Vector *velocity) {
 	if (fabs(dtheta) <= MIN_TURNRATE) turning = false; 
 	
 	if ( !localizing ) {
-		std::cout << "at: (" << at->x << ", " << at->y << ") " << std::endl;
-		std::cout << "dest: (" << dest.x << ", " << dest.y << ") " << std::endl;
-		std::cout << "distance: " << (*at) - dest << std::endl;
-		std::cout << "magnitude: " << velocity->magnitude << std::endl;
-		std::cout << "acceleration: " << accel << std::endl;
 
 		if ( adjusting && fabs(dtheta) > MIN_TURNRATE ) {
 			velocity->direction = theta;
@@ -79,6 +79,8 @@ int goToPoint(Robot *robot, Point *at, Vector *velocity) {
 			velocity->direction = robot->GetVelocity()->direction;
 			robot->GoalAchieved();
 			adjusting = true;
+			
+			cout << "Waypoint (" << dest.x << ", " << dest.y << ") reached!" << endl;
 		}
 	}
 }
@@ -107,22 +109,15 @@ int obstacleAvoidance(Robot *robot, Point *at, Vector *velocity) {
 		}
 	}
 	
-	//std::cout << "rForce: ";
-	//rForce.print();
-	
 	rForce.direction -= (.5 * PI);
 	rForce.direction += robot->GetVelocity()->direction;
 	
 	force = (-rForce) + *robot->GetVelocity();
 	
-	//std::cout << "force: ";
-	//force.print();
 	
 	if ( fabs(force.direction - robot->GetVelocity()->direction) > MIN_TURNRATE && 
 		 velocity->magnitude > 0.0 && rForce.magnitude > 0.0) {
-		
-		//std::cout << "*Obstacle Avoidance*: ";
-		//velocity->print();
+		 
 		velocity->direction = force.direction;
 		
 		turning = true;
@@ -134,12 +129,11 @@ bool travelling = false;
 int spinning = 0, ind = -1;
 double probs[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 double data[360];
-Path goals;
 
 Point bounds[6] = {
 		(Point){ .109, .116 },			// 6665, 6672
 		(Point){ .117, .125 },			// 6666, 6667
-		(Point){ .135, .153 },			// 6668
+		(Point){ .135, .153 },			// 6668, 6670
 		(Point){ .126, .134 },			// 6669
 		(Point){ 0.0 , .108 },			// 6670
 		(Point){ .154, .2 }				// 6671
@@ -172,7 +166,6 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 	Point goal = robot->GetGoal();
 	
 	if ( localizing ) {
-		std::cout << "In localize!" << std::endl;
 		RangeData *d = robot->GetRangeData();
 		
 		if ( ind != -1 ) {
@@ -182,8 +175,6 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 			right = robot->GetRangeSample( 8 );
 			adjLeft = ( robot->GetRangeSample( 1 ) + robot->GetRangeSample( 2 ) ) / 2;
 			adjRight = ( robot->GetRangeSample( 8 ) + robot->GetRangeSample( 7 ) ) / 2;
-			
-			std::cout << left << ", " << right << std::endl;
 			
 			if ( travelling || (left <= right + .02 && left >= right - .02) ) {
 				
@@ -253,19 +244,20 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 						}
 						
 						robot->SetInternals( initials[bestIndex], bestYaw );
-						//Point p = (Point){ at->x - initials[ind + 1].x, at->y - initials[ind + 1].y };
 						
-						std::cout << std::endl << "============= Localization =============" << std::endl;
-						std::cout << "bestIndex: " << bestIndex << ", bestYaw: " << bestYaw << std::endl;
+						
 						Point p = *at;
-						std::cout << "local p: (" << p.x << ", " << p.y << "), ";
 						p.rotate( (Point){0.0, 0.0}, bestYaw );
-						std::cout << "after rotate: (" << p.x << ", " << p.y << "), ";
-						//p = (Point){p.x - initials[bestIndex].x, p.y - initials[bestIndex].y};
 						p = p + initials[bestIndex];
-						std::cout << "after translate: (" << p.x << ", " << p.y << ")" << std::endl;
+						
+						cout << endl << "============= Localization =============" << endl;
+						cout << "Starting location: (" << initials[bestIndex].x << 
+							", " << initials[bestIndex].y << ")" << endl;
+						cout << "Current location (local coords): (" << p.x << ", " 
+							<< p.y << ")" << endl << endl;
 						
 						robot->UpdatePath( PlanPath( p, goals, robot ) );
+						
 						localizing = false;
 					}
 				}
@@ -294,8 +286,6 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 			}
 			
 			sd = sqrt( (a / 360) - ((b / 360) * (b / 360)) );
-			
-			std::cout << "standard deviation: " << sd << std::endl;
 			
 			for (int i = 0; i < 6; i++) {
 				if ( sd >= bounds[i].x && sd <= bounds[i].y ) {
@@ -334,8 +324,16 @@ int localize( Robot *robot, Point *at, Vector *velocity ) {
 					
 					p.rotate( (Point){0.0, 0.0}, yaw );
 					p = p + initials[ind + 1];
+					
+					cout << endl << "============= Localization =============" << endl;
+					cout << "Starting location: (" << initials[ind + 1].x << 
+							", " << initials[ind + 1].y << ")" << endl;
+					cout << "Current location (local coords): (" << p.x << ", " 
+							<< p.y << ")" << endl << endl;
+					
 					 
 					robot->UpdatePath( PlanPath( p, goals, robot ) );
+					
 					localizing = false;
 			}
 		}
@@ -404,14 +402,6 @@ int main( int argc, char *argv[] ) {
 	robot.AddBehavior( &obstacleAvoidance );
 	robot.AddBehavior( &convertToTurnrate );
 	robot.AddBehavior( &localize );
-	
-	Point ref = (Point){3, -5}, lP = (Point){-3, -5};
-	double theta = PI/2;
-	
-	lP.rotate( (Point){0.0, 0.0}, theta );
-	lP = (Point){ lP.x - ref.x, lP.y - ref.y };
-	
-	std::cout << "Translated point: (" << lP.x << ", " << lP.y << ") " << std::endl;
 	
 	robot.Run();
 	
