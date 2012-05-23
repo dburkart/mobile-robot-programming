@@ -66,7 +66,7 @@ int goToPoint(Robot *robot, Point *at, Vector *velocity) {
 	
 		// If we haven't started moving yet, OR we have and are still far enough
 		// away, and we haven't overshot.
-		else if ( !velocity->magnitude || velocity->magnitude == MAX_XSPEED || ((*at) - dest > .1 && accel <= 0.0) ) {
+		else if ( !velocity->magnitude || velocity->magnitude == MAX_XSPEED || ((*at) - dest > .05 && accel <= 0.0) ) {
 			velocity->direction = (turning) ? theta : robot->GetVelocity()->direction;
 			velocity->magnitude = ( MAX_XSPEED < velocity->magnitude + accel) ? 
 				MAX_XSPEED : velocity->magnitude + accel;
